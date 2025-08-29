@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班房管理系統 - 養成遊戲</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 導航標籤 -->
+    <nav class="main-nav">
+        <button class="nav-tab active" onclick="switchTab('main')" id="main-tab">
+            🏠 主頁
+        </button>
+        <button class="nav-tab" onclick="switchTab('ranking')" id="ranking-tab">
+            🏆 排行榜
+        </button>
+        <button class="nav-tab" onclick="switchTab('logs')" id="logs-tab">
+            📋 記錄
+        </button>
+        
+        <!-- 老師模式切換 -->
+        <div class="teacher-mode-section">
+            <button id="teacherModeBtn" class="teacher-mode-btn" onclick="toggleTeacherMode()">
+                <span id="teacherModeIcon">🔒</span>
+                <span id="teacherModeText">老師模式</span>
+            </button>
+            <button id="changePasswordBtn" class="change-password-btn" onclick="showChangePasswordModal()" style="display: none;" title="修改密碼">
+                🔑
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- 主頁內容 -->
+        <div id="main-content" class="tab-content active">
+
+            <!-- 控制面板 -->
+            <section class="control-panel">
+                <div class="panel-row">
+                    <div class="add-student-section">
+                        <input type="text" id="studentName" placeholder="輸入學生姓名" maxlength="20">
+                        <button onclick="addStudent()">➕ 新增學生</button>
+                    </div>
+                    
+                    <div class="bulk-actions">
+                        <h3>全班操作</h3>
+                        <div class="bulk-buttons">
+                            <button onclick="adjustAllPoints(1)" class="btn-positive">全班 +1</button>
+                            <button onclick="adjustAllPoints(5)" class="btn-positive">全班 +5</button>
+                            <button onclick="adjustAllPoints(-1)" class="btn-negative">全班 -1</button>
+                            <button onclick="adjustAllPoints(-5)" class="btn-negative">全班 -5</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 行為選項區域 -->
+            <section class="behaviors-section">
+                <div class="behaviors-tabs">
+                    <button class="behavior-tab active" onclick="switchBehaviorType('positive')" id="positive-tab">
+                        👍 正面行為
+                    </button>
+                    <button class="behavior-tab" onclick="switchBehaviorType('negative')" id="negative-tab">
+                        ⚠️ 需要改進
+                    </button>
+                    <button class="behavior-tab" onclick="switchBehaviorType('supermarket')" id="supermarket-tab">
+                        🛒 超級市場
+                    </button>
+                    <button class="behavior-edit-toggle" onclick="toggleEditMode()" id="editModeBtn">
+                        ✏️ 編輯模式
+                    </button>
+                </div>
+                
+                <!-- 正面行為區域 -->
+                <div class="behavior-options-container" id="positive-behaviors">
+                    <h4>點選行為，然後選擇學生進行加分</h4>
+                    <div class="behaviors-grid" id="positive-behaviors-grid">
+                        <!-- 正面行為選項將在這裡動態生成 -->
+                    </div>
+                    <button class="add-behavior-btn" onclick="showAddBehaviorModal('positive')" id="addPositiveBtn" style="display: none;">
+                        ➕ 新增正面行為
+                    </button>
+                </div>
+                
+                <!-- 需要改進行為區域 -->
+                <div class="behavior-options-container" id="negative-behaviors" style="display: none;">
+                    <h4>點選行為，然後選擇學生進行扣分</h4>
+                    <div class="behaviors-grid" id="negative-behaviors-grid">
+                        <!-- 負面行為選項將在這裡動態生成 -->
+                    </div>
+                    <button class="add-behavior-btn" onclick="showAddBehaviorModal('negative')" id="addNegativeBtn" style="display: none;">
+                        ➕ 新增改進行為
+                    </button>
+                </div>
+                
+                <!-- 超級市場區域 -->
+                <div class="behavior-options-container" id="supermarket-behaviors" style="display: none;">
+                    <div class="supermarket-header">
+                        <h4>🛒 選擇食物，然後選擇學生進行加分</h4>
+                    </div>
+                    
+                    <div class="behaviors-grid supermarket-grid" id="supermarket-behaviors-grid">
+                        <!-- 超級市場商品將在這裡動態生成 -->
+                    </div>
+                    <button class="add-behavior-btn" onclick="showAddBehaviorModal('supermarket')" id="addSupermarketBtn" style="display: none;">
+                        ➕ 新增商品
+                    </button>
+                </div>
+                
+                <!-- 已選擇學生面板 -->
+                <div class="selected-students-panel" id="selectedStudentsPanel" style="display: none;">
+                    <div class="selected-students-header">
+                        <h4>已選擇學生</h4>
+                        <button class="btn-cancel" onclick="cancelSelection()">✕ 取消選擇</button>
+                    </div>
+                    <div class="selected-students-list" id="selectedStudentsList">
+                        <!-- 已選擇的學生標籤將在這裡顯示 -->
+                    </div>
+                    
+                    <!-- 批量選擇區域 -->
+                    <div class="batch-selection-section">
+                        <div class="batch-selection-header">
+                            <h5>快速選擇學生</h5>
+                            <div class="batch-buttons">
+                                <button class="btn-select-all" onclick="selectAllStudents()">全選</button>
+                                <button class="btn-deselect-all" onclick="deselectAllStudents()">取消全選</button>
+                            </div>
+                        </div>
+                        <div class="students-buttons-grid" id="studentsButtonsGrid">
+                            <!-- 學生按鈕將在這裡動態生成 -->
+                        </div>
+                    </div>
+                    
+                    <div class="apply-behavior-section">
+                        <div class="selected-behavior" id="selectedBehaviorText">請先選擇行為</div>
+                        <button class="btn-apply-behavior" id="applyBehaviorBtn" onclick="applySelectedBehavior()" disabled>
+                            套用行為
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 進化階段 -->
+            <section class="stages-section">
+                <div class="stages-header">
+                    <h3>⭐ 進化階段</h3>
+                    <button class="stage-edit-toggle" onclick="toggleStageEditMode()" id="stageEditModeBtn">
+                        ✏️ 編輯模式
+                    </button>
+                </div>
+                <div class="stages-container" id="stagesContainer">
+                    <!-- 階段卡片將在這裡動態生成 -->
+                </div>
+                <button class="add-stage-btn" onclick="showAddStageModal()" id="addStageBtn" style="display: none;">
+                    ➕ 新增階段
+                </button>
+            </section>
+
+            <!-- 學生列表 -->
+            <section class="students-section">
+                <h3>👥 班級學生 (<span id="studentCount">0</span>人)</h3>
+                <div id="studentsContainer" class="students-grid">
+                    <!-- 學生卡片將在這裡動態生成 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 排行榜頁面 -->
+        <div id="ranking-content" class="tab-content">
+            <section class="ranking-section">
+                <h2>🏆 學生排行榜</h2>
+                
+                <!-- 時間篩選標籤 -->
+                <div class="time-filter-tabs">
+                    <button class="time-tab active" onclick="switchTimeFilter('week')" id="week-tab">本週</button>
+                    <button class="time-tab" onclick="switchTimeFilter('lastweek')" id="lastweek-tab">上週</button>
+                    <button class="time-tab" onclick="switchTimeFilter('month')" id="month-tab">本月</button>
+                    <button class="time-tab" onclick="switchTimeFilter('all')" id="all-tab">歷史至今</button>
+                </div>
+
+                <!-- 學生排行榜 -->
+                <div class="student-ranking-container">
+                    <div class="ranking-list" id="studentRankingList">
+                        <!-- 排行榜將動態生成 -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 記錄頁面 -->
+        <div id="logs-content" class="tab-content">
+            <section class="logs-section">
+                <h3>📋 最近記錄</h3>
+                
+                <!-- 記錄篩選器 -->
+                <div class="logs-filter">
+                    <div class="filter-group">
+                        <label for="studentFilter">按學生篩選:</label>
+                        <select id="studentFilter" onchange="filterLogs()">
+                            <option value="">所有學生</option>
+                            <!-- 學生選項將動態生成 -->
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateFilter">時間範圍:</label>
+                        <select id="dateFilter" onchange="filterLogs()">
+                            <option value="">所有時間</option>
+                            <option value="today">今天</option>
+                            <option value="week">本週</option>
+                            <option value="month">本月</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="typeFilter">操作類型:</label>
+                        <select id="typeFilter" onchange="filterLogs()">
+                            <option value="">所有操作</option>
+                            <option value="positive">正面行為</option>
+                            <option value="negative">需要改進</option>
+                        </select>
+                    </div>
+                    <button class="clear-filters-btn" onclick="clearFilters()">清除篩選</button>
+                </div>
+                
+                <div class="logs-controls">
+                    <button onclick="loadLogs()">刷新記錄</button>
+                    <button onclick="clearLogs()">清空顯示</button>
+                </div>
+                <div id="logsContainer" class="logs-container">
+                    <!-- 積分記錄將在這裡顯示 -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 行為編輯模態框 -->
+    <div id="behaviorModal" class="modal">
+        <div class="modal-content behavior-modal-content">
+            <span class="close" onclick="closeBehaviorModal()">&times;</span>
+            <h3 id="behaviorModalTitle">編輯行為</h3>
+            <div id="behaviorModalBody">
+                <form id="behaviorForm" onsubmit="saveBehavior(event)">
+                    <div class="form-group">
+                        <label for="behaviorIcon">圖標:</label>
+                        <input type="text" id="behaviorIcon" maxlength="2" placeholder="🎯" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="behaviorName">名稱:</label>
+                        <input type="text" id="behaviorName" maxlength="20" placeholder="舉手發言" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="behaviorPoints">分數:</label>
+                        <input type="number" id="behaviorPoints" min="-10" max="10" placeholder="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="behaviorDescription">描述:</label>
+                        <input type="text" id="behaviorDescription" maxlength="50" placeholder="hands up">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="btn-save">保存</button>
+                        <button type="button" onclick="closeBehaviorModal()" class="btn-cancel-modal">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 階段編輯模態框 -->
+    <div id="stageModal" class="modal">
+        <div class="modal-content stage-modal-content">
+            <span class="close" onclick="closeStageModal()">&times;</span>
+            <h3 id="stageModalTitle">編輯階段</h3>
+            <div id="stageModalBody">
+                <form id="stageForm" onsubmit="saveStage(event)">
+                    <div class="form-group">
+                        <label for="stageImage">圖片:</label>
+                        <input type="text" id="stageImage" placeholder="./images/phase1.jpg" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stageName">名稱:</label>
+                        <input type="text" id="stageName" maxlength="20" placeholder="第1級" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stageMinPoints">最低分數:</label>
+                        <input type="number" id="stageMinPoints" min="0" max="9999" placeholder="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stageMaxPoints">最高分數:</label>
+                        <input type="number" id="stageMaxPoints" min="0" max="9999" placeholder="19" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stageDescription">描述:</label>
+                        <input type="text" id="stageDescription" maxlength="50" placeholder="初始階段">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="btn-save">保存</button>
+                        <button type="button" onclick="closeStageModal()" class="btn-cancel-modal">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 老師模式密碼輸入框 -->
+    <div id="teacherPasswordModal" class="modal">
+        <div class="modal-content password-modal-content">
+            <span class="close" onclick="closeTeacherPasswordModal()">&times;</span>
+            <h3>🔐 老師模式驗證</h3>
+            <p>請輸入老師密碼以進入編輯模式：</p>
+            <form id="teacherPasswordForm" onsubmit="verifyTeacherPassword(event)">
+                <div class="form-group">
+                    <input type="password" id="teacherPassword" placeholder="請輸入老師密碼" required autocomplete="off">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-save">確認</button>
+                    <button type="button" onclick="closeTeacherPasswordModal()" class="btn-cancel-modal">取消</button>
+                </div>
+                <div class="password-hint">
+                    <small>💡 提示：請輸入老師專用密碼</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 修改密碼模態框 -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content password-modal-content">
+            <span class="close" onclick="closeChangePasswordModal()">&times;</span>
+            <h3>🔑 修改老師密碼</h3>
+            <p>請輸入當前密碼和新密碼：</p>
+            <form id="changePasswordForm" onsubmit="changeTeacherPassword(event)">
+                <div class="form-group">
+                    <label for="currentPasswordInput">當前密碼:</label>
+                    <input type="password" id="currentPasswordInput" placeholder="請輸入當前密碼" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="newPasswordInput">新密碼:</label>
+                    <input type="password" id="newPasswordInput" placeholder="請輸入新密碼" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPasswordInput">確認新密碼:</label>
+                    <input type="password" id="confirmPasswordInput" placeholder="請再次輸入新密碼" required autocomplete="off">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-save">更新密碼</button>
+                    <button type="button" onclick="closeChangePasswordModal()" class="btn-cancel-modal">取消</button>
+                </div>
+                <div class="password-hint">
+                    <small>⚠️ 請妥善保管新密碼，忘記後將無法恢復</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 學生詳情模態框 -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3 id="modalTitle">學生詳情</h3>
+            <div id="modalBody">
+                <!-- 模態框內容 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
