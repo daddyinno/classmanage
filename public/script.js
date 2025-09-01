@@ -169,7 +169,7 @@ function createStudentCard(student) {
                     <div class="stage-points-row">
             <div class="student-stage">
                 <span class="stage-label">等級</span>
-                <span class="stage-value">${stage.name}</span>
+                <span class="stage-value">${getStageNumber(stage.name)}</span>
             </div>
             <div class="total-points-display">
                 <span class="points-label">總積分</span>
@@ -835,6 +835,17 @@ function renderSingleStudent(student) {
             studentCard.style.transform = 'scale(1)';
         }, 300);
     }
+}
+
+// 從等級名稱中提取數字
+function getStageNumber(stageName) {
+    // 匹配「第X級」格式，提取數字
+    const match = stageName.match(/第(\d+)級/);
+    if (match) {
+        return match[1]; // 返回數字部分
+    }
+    // 如果不是標準格式，返回原文字
+    return stageName;
 }
 
 // 計算學生飢餓狀態文本
