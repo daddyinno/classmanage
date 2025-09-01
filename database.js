@@ -40,6 +40,18 @@ function initializeDatabase() {
             FOREIGN KEY (student_id) REFERENCES students (id)
         )`);
 
+        // 超級市場購買記錄表
+        db.run(`CREATE TABLE IF NOT EXISTS purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER,
+            item_name TEXT NOT NULL,
+            item_icon TEXT,
+            cost INTEGER NOT NULL,
+            description TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )`);
+
         // 角色进化配置表
         db.run(`CREATE TABLE IF NOT EXISTS evolution_config (
             id INTEGER PRIMARY KEY,
@@ -210,6 +222,84 @@ function verifyTeacherPassword(inputPassword, callback) {
     });
 }
 
+// 更新學生錢包積分
+function updateWalletPoints(studentId, points, callback) {
+    db.run(
+        "UPDATE students SET wallet_points = wallet_points + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        [points, studentId],
+        callback
+    );
+}
+
+// 購買商品（扣除錢包積分並記錄購買）
+function purchaseItem(studentId, itemName, itemIcon, cost, description, callback) {
+    db.serialize(() => {
+        // 開始事務
+        db.run("BEGIN TRANSACTION");
+        
+        // 檢查錢包餘額
+        db.get("SELECT wallet_points FROM students WHERE id = ?", [studentId], (err, row) => {
+            if (err) {
+                db.run("ROLLBACK");
+                return callback(err);
+            }
+            
+            if (!row) {
+                db.run("ROLLBACK");
+                return callback(new Error('學生不存在'));
+            }
+            
+            if (row.wallet_points < cost) {
+                db.run("ROLLBACK");
+                return callback(new Error('錢包積分不足'));
+            }
+            
+            // 扣除錢包積分
+            db.run(
+                "UPDATE students SET wallet_points = wallet_points - ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                [cost, studentId],
+                function(err) {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return callback(err);
+                    }
+                    
+                    // 記錄購買
+                    db.run(
+                        "INSERT INTO purchases (student_id, item_name, item_icon, cost, description) VALUES (?, ?, ?, ?, ?)",
+                        [studentId, itemName, itemIcon, cost, description],
+                        function(err) {
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return callback(err);
+                            }
+                            
+                            // 提交事務
+                            db.run("COMMIT", callback);
+                        }
+                    );
+                }
+            );
+        });
+    });
+}
+
+// 獲取學生購買記錄
+function getPurchases(studentId, callback) {
+    if (studentId) {
+        db.all(
+            "SELECT * FROM purchases WHERE student_id = ? ORDER BY created_at DESC",
+            [studentId],
+            callback
+        );
+    } else {
+        db.all(
+            "SELECT p.*, s.name as student_name FROM purchases p LEFT JOIN students s ON p.student_id = s.id ORDER BY p.created_at DESC",
+            callback
+        );
+    }
+}
+
 module.exports = {
     db,
     initializeDatabase,
@@ -222,5 +312,8 @@ module.exports = {
     getStageByPoints,
     getSystemConfig,
     updateSystemConfig,
-    verifyTeacherPassword
+    verifyTeacherPassword,
+    updateWalletPoints,
+    purchaseItem,
+    getPurchases
 };

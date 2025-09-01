@@ -4,6 +4,7 @@ let logs = [];
 let selectedStudents = [];
 let selectedBehavior = null;
 let isSelectionMode = false;
+let isPurchaseMode = false;
 let isEditMode = false;
 let editingBehaviorIndex = -1;
 let editingBehaviorType = '';
@@ -17,8 +18,38 @@ let isTeacherMode = false; // 老師模式狀態
 
 // 階段配置（已廢棄，使用 getCurrentStageConfig() 替代）
 
-// API 基礎URL
-const API_BASE = '/api';
+// API 基礎URL - 支援子文件夾部署
+const API_BASE = (() => {
+    const currentHost = window.location.hostname;
+    const currentPort = window.location.port;
+    const currentPath = window.location.pathname;
+    
+    // 如果是本地开发环境
+    if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        return `http://${currentHost}:${currentPort || 3000}/api`;
+    }
+    
+    // 生产环境：基于当前路径构建API路径
+    // 例如：如果页面是 /subfolder/index.html，API应该是 /subfolder/api
+    // 如果页面在 /subfolder/public/index.html，API应该是 /subfolder/api
+    let basePath = currentPath.replace(/\/[^\/]*$/, ''); // 去掉文件名，保留路径
+    
+    // 如果路径包含 /public，则移除它（因为API在上一级目录）
+    if (basePath.endsWith('/public')) {
+        basePath = basePath.replace('/public', '');
+    }
+    
+    const apiPath = basePath + '/api';
+    
+    console.log('部署环境检测:', {
+        currentPath,
+        basePath,
+        apiPath,
+        finalAPI: apiPath
+    });
+    
+    return apiPath;
+})();
 
 // 頁面載入完成後執行
 document.addEventListener('DOMContentLoaded', function() {
@@ -137,13 +168,16 @@ function createStudentCard(student) {
             <!-- 學生階段 -->
             <div class="student-stage">${stage.name}</div>
             
-            <!-- 學生分數 -->
-            <div class="student-points">${student.points} 分</div>
-            
-            <!-- 進度信息 -->
-            <div class="progress-info">
-                <small>${getProgressText(student.points, stage)}</small>
-            </div>
+                         <!-- 學生分數 -->
+             <div class="student-points">
+                 <div class="total-points">總積分: ${student.points}</div>
+                 <div class="wallet-points">錢包: ${student.wallet_points || 0} 💰</div>
+             </div>
+             
+             <!-- 進度信息 -->
+             <div class="progress-info">
+                 <small>${getProgressText(student.points, stage)}</small>
+             </div>
             
 
             
@@ -259,6 +293,25 @@ async function adjustPointsWithAnimation(studentId, points, reason) {
         const data = await response.json();
         
         if (response.ok) {
+            // 如果是正面行為（加分），同時增加錢包積分
+            if (points > 0) {
+                try {
+                    await fetch(`${API_BASE}/students/${studentId}/wallet`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
+                        },
+                        body: JSON.stringify({ 
+                            points: points
+                        })
+                    });
+                } catch (walletError) {
+                    console.error('更新錢包積分失敗:', walletError);
+                    // 不阻斷主要流程，只是記錄錯誤
+                }
+            }
+            
             // 显示积分变化动画
             showPointsAnimation(studentId, points);
             
@@ -749,6 +802,38 @@ window.onclick = function(event) {
     const modal = document.getElementById('modal');
     if (event.target === modal) {
         closeModal();
+    }
+}
+
+// 購買商品
+async function purchaseItem(studentId, itemName, itemIcon, cost, description) {
+    try {
+        const response = await fetch(`${API_BASE}/students/${studentId}/purchase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itemName: itemName,
+                itemIcon: itemIcon,
+                cost: cost,
+                description: description
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || '購買失敗');
+        }
+        
+        // 重新載入學生數據以更新錢包餘額
+        await loadStudents();
+        
+        return data;
+    } catch (error) {
+        console.error('購買商品失敗:', error);
+        throw error;
     }
 }
 
@@ -1388,6 +1473,18 @@ function renderSupermarketBehaviors() {
 
 
 
+// 獲取當前活躍的行為類型
+function getCurrentBehaviorType() {
+    const activeTab = document.querySelector('.behavior-tab.active');
+    if (activeTab) {
+        const id = activeTab.id;
+        if (id === 'positive-tab') return 'positive';
+        if (id === 'negative-tab') return 'negative';
+        if (id === 'supermarket-tab') return 'supermarket';
+    }
+    return 'positive'; // 默認
+}
+
 // 切換行為類型標籤
 function switchBehaviorType(type) {
     // 更新標籤狀態
@@ -1437,16 +1534,26 @@ function selectBehavior(element, behavior) {
     element.classList.add('selected');
     selectedBehavior = behavior;
     
-    // 進入選擇模式
-    isSelectionMode = true;
+    // 檢查當前是否在超級市場標籤
+    const currentBehaviorType = getCurrentBehaviorType();
+    
+    if (currentBehaviorType === 'supermarket') {
+        // 超級市場模式：購買商品
+        isPurchaseMode = true;
+        isSelectionMode = true;
+        showNotification(`選擇要購買 "${behavior.name}" (${behavior.points}💰) 的學生`, 'info');
+    } else {
+        // 正面/負面行為模式：加減分
+        isPurchaseMode = false;
+        isSelectionMode = true;
+        showNotification('現在請點擊要給分的學生', 'info');
+    }
     
     // 重新渲染學生卡片以顯示選擇模式
     renderStudents();
     
     // 顯示已選擇學生面板
     updateSelectedStudentsPanel();
-    
-    showNotification('現在請點擊要給分的學生', 'info');
 }
 
 // 處理學生選擇
@@ -1583,6 +1690,7 @@ function cancelSelection() {
     selectedStudents = [];
     selectedBehavior = null;
     isSelectionMode = false;
+    isPurchaseMode = false;
     
     // 移除所有行為選中狀態
     document.querySelectorAll('.behavior-item.selected').forEach(item => item.classList.remove('selected'));
@@ -1609,19 +1717,31 @@ async function applySelectedBehavior() {
     }
     
     try {
-        const promises = selectedStudents.map(student => 
-            adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name)
-        );
-        
-        await Promise.all(promises);
-        
-        showSuccess(`已為 ${selectedStudents.length} 位學生應用「${selectedBehavior.name}」行為！`);
+        if (isPurchaseMode) {
+            // 超級市場購買模式
+            const promises = selectedStudents.map(student => 
+                purchaseItem(student.id, selectedBehavior.name, selectedBehavior.icon, selectedBehavior.points, selectedBehavior.description)
+            );
+            
+            await Promise.all(promises);
+            
+            showSuccess(`${selectedStudents.length} 位學生成功購買了「${selectedBehavior.name}」！`);
+        } else {
+            // 正面/負面行為模式
+            const promises = selectedStudents.map(student => 
+                adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name)
+            );
+            
+            await Promise.all(promises);
+            
+            showSuccess(`已為 ${selectedStudents.length} 位學生應用「${selectedBehavior.name}」行為！`);
+        }
         
         // 清除選擇狀態
         cancelSelection();
         
     } catch (error) {
-        showError('應用行為失敗: ' + error.message);
+        showError((isPurchaseMode ? '購買失敗' : '應用行為失敗') + ': ' + error.message);
     }
 }
 

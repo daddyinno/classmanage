@@ -43,3 +43,6 @@ Thumbs.db
 
 # Optional: SQLite database (uncomment if you don't want to include the database file)
 # classroom.db
+
+# Exclude Review-Gate directory
+Review-Gate/

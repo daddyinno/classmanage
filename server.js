@@ -6,11 +6,19 @@ const database = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BASE_PATH = process.env.BASE_PATH || ''; // 支援子文件夾部署，例如 '/subfolder'
 
 // 中间件
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// 支援子文件夾部署的靜態文件服務
+if (BASE_PATH) {
+    app.use(BASE_PATH, express.static(path.join(__dirname, 'public')));
+    console.log(`📁 靜態文件將在 ${BASE_PATH} 路徑下提供服務`);
+} else {
+    app.use(express.static(path.join(__dirname, 'public')));
+}
 
 // 簡單的權限檢查中間件
 function requireTeacherAuth(req, res, next) {
@@ -30,10 +38,11 @@ function requireTeacherAuth(req, res, next) {
 // 初始化数据库
 database.initializeDatabase();
 
-// 路由
+// 創建API路由器以支援子文件夾部署
+const apiRouter = express.Router();
 
 // 获取所有学生
-app.get('/api/students', (req, res) => {
+apiRouter.get('/students', (req, res) => {
     database.getAllStudents((err, students) => {
         if (err) {
             return res.status(500).json({ error: '获取学生列表失败' });
@@ -43,7 +52,7 @@ app.get('/api/students', (req, res) => {
 });
 
 // 添加学生
-app.post('/api/students', requireTeacherAuth, (req, res) => {
+apiRouter.post('/students', requireTeacherAuth, (req, res) => {
     const { name } = req.body;
     
     if (!name || name.trim() === '') {
@@ -59,7 +68,7 @@ app.post('/api/students', requireTeacherAuth, (req, res) => {
 });
 
 // 全班加减分 - 必须放在单个学生路由之前，避免路由冲突
-app.post('/api/students/all/points', requireTeacherAuth, (req, res) => {
+apiRouter.post('/students/all/points', requireTeacherAuth, (req, res) => {
     const { points, reason } = req.body;
     
     if (isNaN(points)) {
@@ -75,7 +84,7 @@ app.post('/api/students/all/points', requireTeacherAuth, (req, res) => {
 });
 
 // 更新单个学生积分
-app.post('/api/students/:id/points', requireTeacherAuth, (req, res) => {
+apiRouter.post('/students/:id/points', requireTeacherAuth, (req, res) => {
     const studentId = parseInt(req.params.id);
     const { points, reason } = req.body;
     
@@ -92,7 +101,7 @@ app.post('/api/students/:id/points', requireTeacherAuth, (req, res) => {
 });
 
 // 获取积分记录
-app.get('/api/logs/:studentId?', (req, res) => {
+apiRouter.get('/logs/:studentId?', (req, res) => {
     const studentId = req.params.studentId ? parseInt(req.params.studentId) : null;
     
     database.getPointLogs(studentId, (err, logs) => {
@@ -104,7 +113,7 @@ app.get('/api/logs/:studentId?', (req, res) => {
 });
 
 // 删除学生
-app.delete('/api/students/:id', requireTeacherAuth, (req, res) => {
+apiRouter.delete('/students/:id', requireTeacherAuth, (req, res) => {
     const studentId = parseInt(req.params.id);
     
     if (isNaN(studentId)) {
@@ -119,8 +128,57 @@ app.delete('/api/students/:id', requireTeacherAuth, (req, res) => {
     });
 });
 
+// 更新學生錢包積分（正面行為會增加錢包積分）
+apiRouter.post('/students/:id/wallet', requireTeacherAuth, (req, res) => {
+    const studentId = parseInt(req.params.id);
+    const { points } = req.body;
+    
+    if (isNaN(studentId) || isNaN(points)) {
+        return res.status(400).json({ error: '無效的參數' });
+    }
+    
+    database.updateWalletPoints(studentId, points, (err) => {
+        if (err) {
+            return res.status(500).json({ error: '更新錢包積分失敗' });
+        }
+        res.json({ message: '錢包積分更新成功' });
+    });
+});
+
+// 購買商品
+apiRouter.post('/students/:id/purchase', (req, res) => {
+    const studentId = parseInt(req.params.id);
+    const { itemName, itemIcon, cost, description } = req.body;
+    
+    if (isNaN(studentId) || !itemName || isNaN(cost)) {
+        return res.status(400).json({ error: '無效的參數' });
+    }
+    
+    database.purchaseItem(studentId, itemName, itemIcon, cost, description, (err) => {
+        if (err) {
+            if (err.message === '錢包積分不足') {
+                return res.status(400).json({ error: '錢包積分不足' });
+            }
+            return res.status(500).json({ error: '購買失敗' });
+        }
+        res.json({ message: '購買成功' });
+    });
+});
+
+// 獲取購買記錄
+apiRouter.get('/purchases', (req, res) => {
+    const studentId = req.query.student_id ? parseInt(req.query.student_id) : null;
+    
+    database.getPurchases(studentId, (err, purchases) => {
+        if (err) {
+            return res.status(500).json({ error: '獲取購買記錄失敗' });
+        }
+        res.json(purchases);
+    });
+});
+
 // 获取阶段信息 (10级系统，每20分一级)
-app.get('/api/stages', (req, res) => {
+apiRouter.get('/stages', (req, res) => {
     const stages = [
         { name: 'level1', min: 0, max: 19, description: '第1級', emoji: '1️⃣' },
         { name: 'level2', min: 20, max: 39, description: '第2級', emoji: '2️⃣' },
@@ -137,7 +195,7 @@ app.get('/api/stages', (req, res) => {
 });
 
 // 驗證老師密碼
-app.post('/api/auth/verify-teacher', (req, res) => {
+apiRouter.post('/auth/verify-teacher', (req, res) => {
     const { password } = req.body;
     
     if (!password) {
@@ -159,7 +217,7 @@ app.post('/api/auth/verify-teacher', (req, res) => {
 });
 
 // 更新老師密碼 (需要先驗證當前密碼)
-app.post('/api/auth/change-password', (req, res) => {
+apiRouter.post('/auth/change-password', (req, res) => {
     const { currentPassword, newPassword } = req.body;
     
     if (!currentPassword || !newPassword) {
@@ -190,7 +248,7 @@ app.post('/api/auth/change-password', (req, res) => {
 });
 
 // 获取学生排行榜
-app.get('/api/ranking/:period?', (req, res) => {
+apiRouter.get('/ranking/:period?', (req, res) => {
     const period = req.params.period || 'all';
     
     database.db.all("SELECT * FROM students ORDER BY points DESC", (err, students) => {
@@ -246,9 +304,20 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// 掛載API路由器（支援子文件夾部署）
+if (BASE_PATH) {
+    app.use(`${BASE_PATH}/api`, apiRouter);
+    console.log(`🔗 API路由將在 ${BASE_PATH}/api 路徑下提供服務`);
+} else {
+    app.use('/api', apiRouter);
+}
+
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 班房管理系统运行在 http://localhost:${PORT}`);
+    if (BASE_PATH) {
+        console.log(`📁 部署路徑: ${BASE_PATH}`);
+    }
     console.log('📚 数据库已初始化');
     console.log('🎮 养成游戏系统已就绪！');
 });

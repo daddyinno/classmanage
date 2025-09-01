@@ -400,12 +400,33 @@ button:active {
 }
 
 .student-points {
-    font-size: 1.3em;
+    font-size: 1.1em;
     font-weight: 700;
     color: #2d3748;
     text-align: center;
     margin: 4px 0;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.total-points {
+    font-size: 1.3em;
+    color: #2d3748;
+}
+
+.wallet-points {
+    font-size: 0.9em;
+    color: #d69e2e;
+    background: linear-gradient(135deg, #fed7aa, #ffd89b);
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 1px solid #ed8936;
+    box-shadow: 0 2px 4px rgba(237, 137, 54, 0.2);
+    text-align: center;
+    font-weight: 600;
+    text-shadow: none;
 }
 
 /* 学生操作面板 */
