@@ -60,3 +60,4 @@ volumes:
   classmanage_logs:
     driver: local
 
+
