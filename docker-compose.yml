@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  classmanage:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # 持久化數據庫和備份
+      - classmanage_data:/app/data
+      - classmanage_backups:/app/backups
+      - classmanage_logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/classroom.db
+      - AUTO_BACKUP_ENABLED=true
+      - BACKUP_INTERVAL_HOURS=24
+      - MAX_LOCAL_BACKUPS=7
+      # 從 .env 文件讀取敏感信息
+      - BACKUP_WEBHOOK_URL=${BACKUP_WEBHOOK_URL}
+      - BACKUP_API_KEY=${BACKUP_API_KEY}
+      - TEACHER_PASSWORD=${TEACHER_PASSWORD:-28915063}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 定時備份服務
+  backup-cron:
+    build: .
+    volumes:
+      - classmanage_data:/app/data
+      - classmanage_backups:/app/backups
+      - classmanage_logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/classroom.db
+      - AUTO_BACKUP_ENABLED=true
+      - BACKUP_WEBHOOK_URL=${BACKUP_WEBHOOK_URL}
+      - BACKUP_API_KEY=${BACKUP_API_KEY}
+      - LOG_FILE=/app/logs/backup.log
+    command: >
+      sh -c "
+        echo '0 2 * * * cd /app && npm run backup:cron' | crontab - &&
+        crond -f -l 2
+      "
+    restart: unless-stopped
+    depends_on:
+      - classmanage
+
+volumes:
+  classmanage_data:
+    driver: local
+  classmanage_backups:
+    driver: local
+  classmanage_logs:
+    driver: local
+

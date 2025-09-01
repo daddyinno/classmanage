@@ -1,8 +1,18 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// 数据库文件路径
-const dbPath = path.join(__dirname, 'classroom.db');
+// 載入環境變量
+require('dotenv').config();
+
+// 数据库文件路径 - 支持環境變量配置
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'classroom.db');
+
+// 確保數據庫目錄存在
+const fs = require('fs');
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+}
 
 // 创建数据库连接
 const db = new sqlite3.Database(dbPath);

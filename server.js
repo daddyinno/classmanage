@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const database = require('./database');
 
+// 載入環境變量
+require('dotenv').config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || ''; // 支援子文件夾部署，例如 '/subfolder'
