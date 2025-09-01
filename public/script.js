@@ -166,13 +166,16 @@ function createStudentCard(student) {
             </div>
             
             <!-- 級數和積分在同一行 -->
-            <div class="stage-points-row">
-                <div class="student-stage">${stage.name}</div>
-                <div class="total-points-display">
-                    <span class="points-label">總積分</span>
-                    <span class="points-value">${student.points}</span>
-                </div>
+                    <div class="stage-points-row">
+            <div class="student-stage">
+                <span class="stage-label">級數</span>
+                <span class="stage-value">${stage.name}</span>
             </div>
+            <div class="total-points-display">
+                <span class="points-label">總積分</span>
+                <span class="points-value">${student.points}</span>
+            </div>
+        </div>
              
              <!-- 進度信息 -->
              <div class="progress-info">
