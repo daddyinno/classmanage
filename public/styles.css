@@ -458,6 +458,60 @@ button:active {
 }
 
 /* 錢包相關樣式已移除 */
+
+/* 飢餓狀態樣式 */
+.hunger-status {
+    margin: 6px 0;
+    font-size: 0.8em;
+    text-align: center;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.hunger-safe {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.hunger-warning {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    animation: pulse-warning 2s infinite;
+}
+
+.hunger-critical {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    animation: pulse-critical 1s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.8; 
+        transform: scale(1.02);
+    }
+}
+
+@keyframes pulse-critical {
+    0%, 100% { 
+        opacity: 1; 
+        transform: scale(1);
+        background: rgba(239, 68, 68, 0.1);
+    }
+    50% { 
+        opacity: 0.9; 
+        transform: scale(1.03);
+        background: rgba(239, 68, 68, 0.2);
+    }
+}
 }
 
 /* 学生操作面板 */

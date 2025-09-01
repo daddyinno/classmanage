@@ -180,6 +180,11 @@ function createStudentCard(student) {
              <div class="progress-info">
                  <small>${getProgressText(student.points, stage)}</small>
              </div>
+             
+             <!-- 飢餓狀態 -->
+             <div class="hunger-status">
+                 ${getHungerStatusText(student)}
+             </div>
             
 
             
@@ -791,6 +796,30 @@ window.onclick = function(event) {
 }
 
 // 移除購買功能，超級市場現在直接使用加分功能
+
+// 計算學生飢餓狀態文本
+function getHungerStatusText(student) {
+    // 如果沒有最後餵食時間，假設是剛創建的學生
+    if (!student.last_fed_at) {
+        return '<span class="hunger-safe">🍎 營養充足</span>';
+    }
+    
+    // 計算天數差異
+    const lastFed = new Date(student.last_fed_at);
+    const now = new Date();
+    const daysSinceLastFed = Math.floor((now - lastFed) / (1000 * 60 * 60 * 24));
+    const daysUntilHungry = 14 - daysSinceLastFed;
+    
+    if (daysUntilHungry <= 0) {
+        return '<span class="hunger-critical">💀 已餓死 (即將降級)</span>';
+    } else if (daysUntilHungry <= 2) {
+        return `<span class="hunger-critical">⚠️ ${daysUntilHungry} 天後餓死</span>`;
+    } else if (daysUntilHungry <= 5) {
+        return `<span class="hunger-warning">🍽️ ${daysUntilHungry} 天後餓死</span>`;
+    } else {
+        return `<span class="hunger-safe">🍎 ${daysUntilHungry} 天後需要餵食</span>`;
+    }
+}
 
 // 工具函数
 function escapeHtml(text) {
@@ -1461,7 +1490,7 @@ function switchBehaviorType(type) {
     }
     
     // 清除選中的學生
-    clearSelectedStudents();
+    cancelSelection();
     
     // 學生模式下確保隱藏學生選擇面板和所有操作按鈕
     if (!isTeacherMode) {
