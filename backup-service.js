@@ -126,9 +126,12 @@ function setupCronJobs() {
         timezone: "Asia/Hong_Kong"
     });
     
-    // 計算下次備份時間
-    const nextBackup = cron.schedule(backupSchedule, () => {}).nextDates(1)[0];
-    backupStatus.nextBackup = nextBackup.toISOString();
+    // 設置下次備份時間（簡化版本）
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(2, 0, 0, 0); // 設置為明天凌晨2點
+    backupStatus.nextBackup = tomorrow.toISOString();
 }
 
 // 啟動服務
