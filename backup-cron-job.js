@@ -24,7 +24,7 @@ function log(message, level = 'INFO') {
 // 發送備份完成通知郵件
 async function sendNotificationEmail(result, error = null) {
     try {
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.createTransport({
             host: process.env.MAIL_HOST || 'smtp.gmail.com',
             port: process.env.MAIL_PORT || 587,
             secure: false,

@@ -32,7 +32,7 @@ function createTransporter() {
         throw new Error('郵件配置不完整：缺少 SMTP_USER 或 SMTP_PASS');
     }
     
-    return nodemailer.createTransporter(EMAIL_CONFIG);
+    return nodemailer.createTransport(EMAIL_CONFIG);
 }
 
 /**
