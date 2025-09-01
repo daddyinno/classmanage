@@ -1299,6 +1299,115 @@ function showEvolutionAnimation(student, oldStage, newStage) {
     });
 }
 
+// 显示批量升级动画
+function showBatchEvolutionAnimation(upgradedStudents) {
+    const modal = document.createElement('div');
+    modal.className = 'evolution-overlay batch-evolution';
+    modal.innerHTML = `
+        <div class="evolution-content">
+            <div class="evolution-bg"></div>
+            <div class="evolution-text">
+                <h1>🎊 批量升级成功！</h1>
+                <h2>共有 ${upgradedStudents.length} 位学生升级</h2>
+                <div class="students-list">
+                    ${upgradedStudents.map(student => `
+                        <div class="student-item">
+                            <div class="student-avatar">${student.name.charAt(0)}</div>
+                            <div class="student-details">
+                                <h4>${escapeHtml(student.name)}</h4>
+                                <p>升级到 <strong>${student.newStage}</strong></p>
+                                <p>当前积分：<strong>${student.points}</strong></p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="celebration-particles">
+                    ${'🌟'.repeat(30).split('').map((star, i) => `<span class="particle" style="animation-delay: ${i * 0.1}s">${star}</span>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 8秒后自动关闭
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.parentNode.removeChild(modal);
+            }, 500);
+        }
+    }, 8000);
+    
+    // 点击关闭
+    modal.addEventListener('click', () => {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        }, 500);
+    });
+}
+
+// 显示批量降级动画
+function showBatchDowngradeAnimation(downgradedStudents) {
+    const modal = document.createElement('div');
+    modal.className = 'downgrade-overlay batch-downgrade';
+    modal.innerHTML = `
+        <div class="downgrade-content">
+            <div class="downgrade-bg"></div>
+            <div class="downgrade-text">
+                <h1>📉 批量降级通知</h1>
+                <h2>共有 ${downgradedStudents.length} 位学生因饥饿降级</h2>
+                <div class="students-list">
+                    ${downgradedStudents.map(student => `
+                        <div class="student-item">
+                            <div class="student-avatar">${student.name.charAt(0)}</div>
+                            <div class="student-details">
+                                <h4>${escapeHtml(student.name)}</h4>
+                                <p>降级到 <strong>${student.oldStage}</strong></p>
+                                <p>当前积分：<strong>${student.points}</strong></p>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="encouragement-message">
+                    <span class="sad-emoji cry-animation">😢</span>
+                    <span class="encourage-text">大家要继续努力，相信可以重新升级！</span>
+                    <span class="sad-emoji cry-animation">💧</span>
+                </div>
+                <div class="sad-rain-effect">
+                    ${'💧'.repeat(20).split('').map((drop, i) => `<span class="rain-drop" style="animation-delay: ${i * 0.2}s; left: ${Math.random() * 100}%">${drop}</span>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // 8秒后自动关闭
+    setTimeout(() => {
+        if (modal.parentNode) {
+            modal.style.opacity = '0';
+            setTimeout(() => {
+                modal.parentNode.removeChild(modal);
+            }, 500);
+        }
+    }, 8000);
+    
+    // 点击关闭
+    modal.addEventListener('click', () => {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            if (modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+        }, 500);
+    });
+}
+
 // 渲染行為選項
 function renderBehaviorOptions() {
     try {
