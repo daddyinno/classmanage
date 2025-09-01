@@ -387,36 +387,42 @@ button:active {
     margin-bottom: 5px;
 }
 
-.student-stage {
-    color: #667eea;
-    font-size: 0.85em;
-    font-weight: 500;
-    margin: 2px 0 6px 0;
-    padding: 2px 8px;
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.1), rgba(167, 139, 250, 0.1));
-    border-radius: 12px;
-    border: 1px solid rgba(102, 126, 234, 0.2);
-    display: inline-block;
+/* 舊的 student-stage 樣式已移除，使用新的同一行布局 */
+
+/* 級數和積分同一行布局 */
+.stage-points-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    gap: 8px;
 }
 
-/* 新的積分容器樣式 */
-.student-points-container {
-    margin: 8px 0;
-    display: flex;
-    justify-content: center;
+.student-stage {
+    flex: 0 0 auto;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    color: #4a5568;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    min-width: 60px;
+    text-align: center;
 }
 
 .total-points-display {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 6px 14px;
+    border-radius: 18px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.3);
     transition: all 0.3s ease;
-    min-width: 100px;
+    flex: 1;
+    min-width: 80px;
 }
 
 .total-points-display:hover {
@@ -425,15 +431,15 @@ button:active {
 }
 
 .points-label {
-    font-size: 0.75em;
+    font-size: 0.7em;
     font-weight: 500;
     opacity: 0.9;
-    margin-bottom: 2px;
-    letter-spacing: 0.5px;
+    margin-bottom: 1px;
+    letter-spacing: 0.3px;
 }
 
 .points-value {
-    font-size: 1.8em;
+    font-size: 1.4em;
     font-weight: 800;
     line-height: 1;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
