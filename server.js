@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const cron = require('node-cron');
 const database = require('./database');
 
 // 載入環境變量
@@ -421,6 +422,46 @@ if (BASE_PATH) {
     app.use('/api', apiRouter);
 }
 
+// ============ 定時備份功能 ============
+function setupBackupSchedule() {
+    // 檢查是否啟用自動備份
+    const autoBackupEnabled = process.env.AUTO_BACKUP_ENABLED !== 'false';
+    
+    if (!autoBackupEnabled) {
+        console.log('⚠️  自動備份已禁用');
+        return;
+    }
+    
+    // 設置備份時間 - 默認每天凌晨 2:00 (香港時間)
+    const backupSchedule = process.env.BACKUP_CRON_SCHEDULE || '0 2 * * *';
+    
+    console.log(`📅 設置定時備份: ${backupSchedule} (${process.env.TZ || 'Asia/Hong_Kong'})`);
+    
+    cron.schedule(backupSchedule, async () => {
+        console.log('🕐 定時備份任務觸發 -', new Date().toLocaleString('zh-TW'));
+        
+        try {
+            const backup = require('./backup');
+            
+            // 執行郵件備份
+            backup.performBackup('email', (err, result) => {
+                if (err) {
+                    console.error('❌ 定時備份失敗:', err.message);
+                } else {
+                    console.log('✅ 定時備份成功完成:', result);
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ 定時備份執行錯誤:', error.message);
+        }
+    }, {
+        timezone: process.env.TZ || "Asia/Hong_Kong"
+    });
+    
+    console.log('✅ 定時備份已設置');
+}
+
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 班房管理系统运行在 http://localhost:${PORT}`);
@@ -429,6 +470,9 @@ app.listen(PORT, () => {
     }
     console.log('📚 数据库已初始化');
     console.log('🎮 养成游戏系统已就绪！');
+    
+    // 設置定時備份
+    setupBackupSchedule();
 });
 
 module.exports = app;
