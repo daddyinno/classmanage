@@ -169,9 +169,11 @@ function createStudentCard(student) {
             <div class="student-stage">${stage.name}</div>
             
                          <!-- 學生分數 -->
-             <div class="student-points">
-                 <div class="total-points">總積分: ${student.points}</div>
-                 <div class="wallet-points">錢包: ${student.wallet_points || 0} 💰</div>
+             <div class="student-points-container">
+                 <div class="total-points-display">
+                     <span class="points-label">總積分</span>
+                     <span class="points-value">${student.points}</span>
+                 </div>
              </div>
              
              <!-- 進度信息 -->
@@ -293,24 +295,7 @@ async function adjustPointsWithAnimation(studentId, points, reason) {
         const data = await response.json();
         
         if (response.ok) {
-            // 如果是正面行為（加分），同時增加錢包積分
-            if (points > 0) {
-                try {
-                    await fetch(`${API_BASE}/students/${studentId}/wallet`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
-                        },
-                        body: JSON.stringify({ 
-                            points: points
-                        })
-                    });
-                } catch (walletError) {
-                    console.error('更新錢包積分失敗:', walletError);
-                    // 不阻斷主要流程，只是記錄錯誤
-                }
-            }
+
             
             // 显示积分变化动画
             showPointsAnimation(studentId, points);
@@ -805,37 +790,7 @@ window.onclick = function(event) {
     }
 }
 
-// 購買商品
-async function purchaseItem(studentId, itemName, itemIcon, cost, description) {
-    try {
-        const response = await fetch(`${API_BASE}/students/${studentId}/purchase`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                itemName: itemName,
-                itemIcon: itemIcon,
-                cost: cost,
-                description: description
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || '購買失敗');
-        }
-        
-        // 重新載入學生數據以更新錢包餘額
-        await loadStudents();
-        
-        return data;
-    } catch (error) {
-        console.error('購買商品失敗:', error);
-        throw error;
-    }
-}
+// 移除購買功能，超級市場現在直接使用加分功能
 
 // 工具函数
 function escapeHtml(text) {
@@ -1538,10 +1493,10 @@ function selectBehavior(element, behavior) {
     const currentBehaviorType = getCurrentBehaviorType();
     
     if (currentBehaviorType === 'supermarket') {
-        // 超級市場模式：購買商品
-        isPurchaseMode = true;
+        // 超級市場模式：老師直接加分
+        isPurchaseMode = false;
         isSelectionMode = true;
-        showNotification(`選擇要購買 "${behavior.name}" (${behavior.points}💰) 的學生`, 'info');
+        showNotification(`選擇要給 "${behavior.name}" (+${behavior.points}分) 的學生`, 'info');
     } else {
         // 正面/負面行為模式：加減分
         isPurchaseMode = false;
@@ -1717,25 +1672,15 @@ async function applySelectedBehavior() {
     }
     
     try {
-        if (isPurchaseMode) {
-            // 超級市場購買模式
-            const promises = selectedStudents.map(student => 
-                purchaseItem(student.id, selectedBehavior.name, selectedBehavior.icon, selectedBehavior.points, selectedBehavior.description)
-            );
-            
-            await Promise.all(promises);
-            
-            showSuccess(`${selectedStudents.length} 位學生成功購買了「${selectedBehavior.name}」！`);
-        } else {
-            // 正面/負面行為模式
-            const promises = selectedStudents.map(student => 
-                adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name)
-            );
-            
-            await Promise.all(promises);
-            
-            showSuccess(`已為 ${selectedStudents.length} 位學生應用「${selectedBehavior.name}」行為！`);
-        }
+        // 統一使用加分模式（移除購買概念）
+        const promises = selectedStudents.map(student => 
+            adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name)
+        );
+        
+        await Promise.all(promises);
+        
+        const actionType = getCurrentBehaviorType() === 'supermarket' ? '獎勵' : '應用';
+        showSuccess(`已為 ${selectedStudents.length} 位學生${actionType}「${selectedBehavior.name}」`);
         
         // 清除選擇狀態
         cancelSelection();

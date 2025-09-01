@@ -399,6 +399,47 @@ button:active {
     display: inline-block;
 }
 
+/* 新的積分容器樣式 */
+.student-points-container {
+    margin: 8px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.total-points-display {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.total-points-display:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.points-label {
+    font-size: 0.75em;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+}
+
+.points-value {
+    font-size: 1.8em;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 保留舊樣式作為備用 */
 .student-points {
     font-size: 1.1em;
     font-weight: 700;
@@ -416,17 +457,7 @@ button:active {
     color: #2d3748;
 }
 
-.wallet-points {
-    font-size: 0.9em;
-    color: #d69e2e;
-    background: linear-gradient(135deg, #fed7aa, #ffd89b);
-    padding: 4px 8px;
-    border-radius: 12px;
-    border: 1px solid #ed8936;
-    box-shadow: 0 2px 4px rgba(237, 137, 54, 0.2);
-    text-align: center;
-    font-weight: 600;
-    text-shadow: none;
+/* 錢包相關樣式已移除 */
 }
 
 /* 学生操作面板 */
