@@ -408,11 +408,9 @@ button:active {
     align-items: center;
     box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
     transition: all 0.3s ease;
-    flex: 0 0 auto;
+    flex: 1;
     min-width: 80px;
     text-align: center;
-    font-size: 0.7em;
-    font-weight: 500;
     height: auto;
 }
 

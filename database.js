@@ -347,7 +347,7 @@ function getHungryStudents(callback) {
          julianday('now') - julianday(s.last_fed_at) as days_since_fed
          FROM students s 
          WHERE s.last_fed_at IS NULL 
-            OR s.last_fed_at < datetime('now', '-14 days')
+            OR s.last_fed_at < datetime('now', '-15 days')
             AND s.points > 0`,
         callback
     );

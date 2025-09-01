@@ -168,7 +168,7 @@ function createStudentCard(student) {
             <!-- 級數和積分在同一行 -->
                     <div class="stage-points-row">
             <div class="student-stage">
-                <span class="stage-label">級數</span>
+                <span class="stage-label">等級</span>
                 <span class="stage-value">${stage.name}</span>
             </div>
             <div class="total-points-display">
@@ -848,16 +848,16 @@ function getHungerStatusText(student) {
     const lastFed = new Date(student.last_fed_at);
     const now = new Date();
     const daysSinceLastFed = Math.floor((now - lastFed) / (1000 * 60 * 60 * 24));
-    const daysUntilHungry = 14 - daysSinceLastFed;
+    const daysUntilHungry = 15 - daysSinceLastFed;
     
     if (daysUntilHungry <= 0) {
-        return '<span class="hunger-critical">💀 已餓死 (即將降級)</span>';
+        return '<span class="hunger-critical">💀 已饑餓 (即將降級)</span>';
     } else if (daysUntilHungry <= 2) {
-        return `<span class="hunger-critical">⚠️ ${daysUntilHungry} 天後餓死</span>`;
+        return `<span class="hunger-critical">⚠️ ${daysUntilHungry} 天後饑餓</span>`;
     } else if (daysUntilHungry <= 5) {
-        return `<span class="hunger-warning">🍽️ ${daysUntilHungry} 天後餓死</span>`;
+        return `<span class="hunger-warning">🍽️ ${daysUntilHungry} 天後饑餓</span>`;
     } else {
-        return `<span class="hunger-safe">🍎 ${daysUntilHungry} 天後需要餵食</span>`;
+        return `<span class="hunger-safe">🍎 ${daysUntilHungry} 天後饑餓</span>`;
     }
 }
 
