@@ -398,25 +398,22 @@ button:active {
     gap: 8px;
 }
 
-.student-stage {
-    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-    color: white;
-    padding: 6px 14px;
-    border-radius: 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
-    transition: all 0.3s ease;
-    flex: 1;
-    min-width: 80px;
+.student-level-text {
+    color: #f59e0b;
+    font-size: 1.1em;
+    font-weight: 600;
     text-align: center;
-    height: auto;
+    margin: 8px 0;
+    padding: 4px 12px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.student-stage:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+.points-container {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
 }
 
 .total-points-display {
@@ -548,7 +545,6 @@ button:active {
         transform: scale(1.03);
         background: rgba(239, 68, 68, 0.2);
     }
-}
 }
 
 /* 学生操作面板 */
@@ -4643,7 +4639,6 @@ button:active {
         font-size: 1rem;
         padding: 3px 10px;
     }
-}
     
     .category-title h5 {
         font-size: 1.1rem;
