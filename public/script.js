@@ -170,11 +170,9 @@ function createStudentCard(student) {
         <div class="student-level-text">${stage.name}</div>
         
         <!-- 積分卡片 -->
-        <div class="points-container">
-            <div class="total-points-display">
-                <span class="points-label">總積分</span>
-                <span class="points-value">${student.points}</span>
-            </div>
+        <div class="total-points-display">
+            <span class="points-label">總積分</span>
+            <span class="points-value">${student.points}</span>
         </div>
              
              <!-- 進度信息 -->
