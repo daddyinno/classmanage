@@ -17,16 +17,21 @@
     "email:config": "node backup.js email-config",
     "email:send": "node backup.js email-send",
     "setup:cron": "echo '0 2 * * * cd $(pwd) && npm run backup:cron' | crontab -",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "backup:service": "node backup-service.js",
+    "backup:cron-job": "node backup-cron-job.js",
+    "render:setup": "node render-backup-setup.js",
+    "render:manager": "node render-backup-manager.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "sqlite3": "^5.1.6",
-    "cors": "^2.8.5",
     "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^6.9.7",
     "path": "^0.12.7",
-    "dotenv": "^16.3.1",
-    "nodemailer": "^6.9.7"
+    "sqlite3": "^5.1.6"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
@@ -34,7 +39,12 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["教育", "游戏化", "班级管理", "积分系统"],
+  "keywords": [
+    "教育",
+    "游戏化",
+    "班级管理",
+    "积分系统"
+  ],
   "author": "ClassManage Team",
   "license": "MIT"
 }

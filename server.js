@@ -302,6 +302,112 @@ function getStageNumber(stageName) {
     return match ? match[1] : '1';
 }
 
+// ============ 備份 API 端點 ============
+const backup = require('./backup');
+
+// 備份狀態查詢
+apiRouter.get('/backup/status', (req, res) => {
+    const fs = require('fs');
+    const backupDir = path.join(__dirname, 'backups');
+    
+    if (!fs.existsSync(backupDir)) {
+        return res.json({
+            status: 'no_backups',
+            message: '尚未進行任何備份',
+            backupCount: 0
+        });
+    }
+    
+    const files = fs.readdirSync(backupDir);
+    const backupFiles = files.filter(f => f.endsWith('.db'));
+    
+    res.json({
+        status: 'active',
+        backupCount: backupFiles.length,
+        lastBackup: backupFiles.length > 0 ? backupFiles[backupFiles.length - 1] : null,
+        backupFiles: backupFiles.slice(-5) // 最近5個備份
+    });
+});
+
+// 觸發手動備份
+apiRouter.post('/backup/trigger', requireTeacherAuth, (req, res) => {
+    const { type = 'local', includeEmail = false } = req.body;
+    
+    console.log(`🔄 手動觸發備份 - 類型: ${type}, 郵件: ${includeEmail}`);
+    
+    const backupType = includeEmail ? 'email' : type;
+    
+    backup.performBackup(backupType, (err, result) => {
+        if (err) {
+            console.error('❌ 手動備份失敗:', err);
+            return res.status(500).json({
+                success: false,
+                message: '備份失敗',
+                error: err.message
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: '備份成功完成',
+            type: backupType,
+            result,
+            timestamp: new Date().toISOString()
+        });
+    });
+});
+
+// 郵件備份專用端點
+apiRouter.post('/backup/email', requireTeacherAuth, (req, res) => {
+    console.log('📧 觸發郵件備份');
+    
+    backup.performBackup('email', (err, result) => {
+        if (err) {
+            console.error('❌ 郵件備份失敗:', err);
+            return res.status(500).json({
+                success: false,
+                message: '郵件備份失敗',
+                error: err.message
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: '郵件備份成功完成',
+            result,
+            timestamp: new Date().toISOString()
+        });
+    });
+});
+
+// 備份記錄查詢
+apiRouter.get('/backup/logs', (req, res) => {
+    const fs = require('fs');
+    const logPath = path.join(__dirname, 'backup.log');
+    
+    if (!fs.existsSync(logPath)) {
+        return res.json({
+            logs: [],
+            message: '暫無備份記錄'
+        });
+    }
+    
+    try {
+        const logContent = fs.readFileSync(logPath, 'utf8');
+        const logs = logContent.split('\n').filter(line => line.trim()).slice(-20); // 最近20條記錄
+        
+        res.json({
+            logs,
+            count: logs.length
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: '讀取備份記錄失敗',
+            message: error.message
+        });
+    }
+});
+
 // 首页
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
