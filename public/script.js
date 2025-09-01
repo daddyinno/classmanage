@@ -1673,13 +1673,28 @@ async function applySelectedBehavior() {
     
     try {
         // 統一使用加分模式（移除購買概念）
-        const promises = selectedStudents.map(student => 
-            adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name)
-        );
+        const promises = selectedStudents.map(async (student) => {
+            await adjustPointsWithAnimation(student.id, selectedBehavior.points, selectedBehavior.name);
+            
+            // 如果是超級市場物品，更新餵食時間
+            if (getCurrentBehaviorType() === 'supermarket') {
+                try {
+                    await fetch(`${API_BASE}/students/${student.id}/feed`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
+                        }
+                    });
+                } catch (feedError) {
+                    console.error('更新餵食時間失敗:', feedError);
+                }
+            }
+        });
         
         await Promise.all(promises);
         
-        const actionType = getCurrentBehaviorType() === 'supermarket' ? '獎勵' : '應用';
+        const actionType = getCurrentBehaviorType() === 'supermarket' ? '餵食' : '應用';
         showSuccess(`已為 ${selectedStudents.length} 位學生${actionType}「${selectedBehavior.name}」`);
         
         // 清除選擇狀態

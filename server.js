@@ -180,23 +180,15 @@ apiRouter.post('/students/:id/wallet', requireTeacherAuth, (req, res) => {
     });
 });
 
-// 購買商品
-apiRouter.post('/students/:id/purchase', (req, res) => {
+// 餵食學生（更新最後餵食時間）
+apiRouter.post('/students/:id/feed', requireTeacherAuth, (req, res) => {
     const studentId = parseInt(req.params.id);
-    const { itemName, itemIcon, cost, description } = req.body;
     
-    if (isNaN(studentId) || !itemName || isNaN(cost)) {
-        return res.status(400).json({ error: '無效的參數' });
-    }
-    
-    database.purchaseItem(studentId, itemName, itemIcon, cost, description, (err) => {
+    database.updateLastFedTime(studentId, (err) => {
         if (err) {
-            if (err.message === '錢包積分不足') {
-                return res.status(400).json({ error: '錢包積分不足' });
-            }
-            return res.status(500).json({ error: '購買失敗' });
+            return res.status(500).json({ error: '更新餵食時間失敗' });
         }
-        res.json({ message: '購買成功' });
+        res.json({ message: '餵食時間更新成功' });
     });
 });
 
@@ -209,6 +201,32 @@ apiRouter.get('/purchases', (req, res) => {
             return res.status(500).json({ error: '獲取購買記錄失敗' });
         }
         res.json(purchases);
+    });
+});
+
+// ============ 飢餓系統 API ============
+
+// 獲取飢餓學生列表
+apiRouter.get('/students/hungry', requireTeacherAuth, (req, res) => {
+    database.getHungryStudents((err, hungryStudents) => {
+        if (err) {
+            return res.status(500).json({ error: '獲取飢餓學生失敗' });
+        }
+        res.json(hungryStudents);
+    });
+});
+
+// 手動處理飢餓降級
+apiRouter.post('/students/process-hunger', requireTeacherAuth, (req, res) => {
+    database.processAllHungryStudents((err, results) => {
+        if (err) {
+            return res.status(500).json({ error: '處理飢餓降級失敗' });
+        }
+        res.json({ 
+            message: '飢餓降級處理完成',
+            processedStudents: results.length,
+            results: results
+        });
     });
 });
 
@@ -493,6 +511,40 @@ function setupBackupSchedule() {
     console.log('✅ 定時備份已設置');
 }
 
+// ============ 飢餓系統定時檢查 ============
+function setupHungerCheck() {
+    // 每天早上8點檢查飢餓狀態
+    const hungerCheckSchedule = process.env.HUNGER_CHECK_SCHEDULE || '0 8 * * *';
+    
+    console.log(`🍽️ 設置飢餓檢查: ${hungerCheckSchedule} (${process.env.TZ || 'Asia/Hong_Kong'})`);
+    
+    cron.schedule(hungerCheckSchedule, async () => {
+        console.log('🍽️ 飢餓檢查任務觸發 -', new Date().toLocaleString('zh-TW'));
+        
+        try {
+            database.processAllHungryStudents((err, results) => {
+                if (err) {
+                    console.error('❌ 飢餓檢查失敗:', err.message);
+                } else if (results.length > 0) {
+                    console.log(`😵 處理了 ${results.length} 位飢餓學生的降級:`);
+                    results.forEach(result => {
+                        console.log(`  - ${result.studentName}: ${result.oldStage}(${result.oldPoints}分) → ${result.newStage}(${result.newPoints}分)`);
+                    });
+                } else {
+                    console.log('✅ 沒有學生需要飢餓降級');
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ 飢餓檢查執行錯誤:', error.message);
+        }
+    }, {
+        timezone: process.env.TZ || "Asia/Hong_Kong"
+    });
+    
+    console.log('✅ 飢餓檢查已設置');
+}
+
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🚀 班房管理系统运行在 http://localhost:${PORT}`);
@@ -504,6 +556,9 @@ app.listen(PORT, () => {
     
     // 設置定時備份
     setupBackupSchedule();
+    
+    // 設置飢餓檢查
+    setupHungerCheck();
 });
 
 module.exports = app;
