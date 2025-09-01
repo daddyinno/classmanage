@@ -495,6 +495,28 @@ button:active {
     animation: pulse-critical 1s infinite;
 }
 
+.hunger-fed {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    animation: feeding-success 0.5s ease-in-out;
+}
+
+@keyframes feeding-success {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.8);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.1);
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1);
+    }
+}
+
 @keyframes pulse-warning {
     0%, 100% { 
         opacity: 1; 

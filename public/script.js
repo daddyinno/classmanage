@@ -795,6 +795,45 @@ window.onclick = function(event) {
 
 // 移除購買功能，超級市場現在直接使用加分功能
 
+// 更新學生的餵食時間（本地數據）
+function updateStudentFeedingTime(studentId) {
+    const student = students.find(s => s.id === studentId);
+    if (student) {
+        // 更新為當前時間
+        student.last_fed_at = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+        
+        // 立即重新渲染這個學生的卡片
+        renderSingleStudent(student);
+        
+        console.log(`✅ 已更新學生 ${student.name} 的餵食時間`);
+    }
+}
+
+// 渲染單個學生卡片（用於即時更新）
+function renderSingleStudent(student) {
+    const studentCard = document.querySelector(`[data-student-id="${student.id}"]`);
+    if (studentCard) {
+        // 找到飢餓狀態元素並更新
+        const hungerStatusElement = studentCard.querySelector('.hunger-status');
+        if (hungerStatusElement) {
+            // 先顯示餵食成功提示
+            hungerStatusElement.innerHTML = '<span class="hunger-fed">🍎 餵食成功！</span>';
+            
+            // 2秒後更新為正常的飢餓狀態
+            setTimeout(() => {
+                hungerStatusElement.innerHTML = getHungerStatusText(student);
+            }, 2000);
+        }
+        
+        // 添加一個簡短的視覺反饋
+        studentCard.style.transform = 'scale(1.02)';
+        studentCard.style.transition = 'transform 0.3s ease';
+        setTimeout(() => {
+            studentCard.style.transform = 'scale(1)';
+        }, 300);
+    }
+}
+
 // 計算學生飢餓狀態文本
 function getHungerStatusText(student) {
     // 如果沒有最後餵食時間，假設是剛創建的學生
@@ -1713,6 +1752,10 @@ async function applySelectedBehavior() {
                             'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
                         }
                     });
+                    
+                    // 立即更新本地學生數據中的餵食時間
+                    updateStudentFeedingTime(student.id);
+                    
                 } catch (feedError) {
                     console.error('更新餵食時間失敗:', feedError);
                 }
