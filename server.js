@@ -39,8 +39,39 @@ function requireTeacherAuth(req, res, next) {
     }
 }
 
-// 初始化数据库
-database.initializeDatabase();
+// ============ 數據庫還原和初始化 ============
+const DatabaseRestoreManager = require('./db-restore-on-startup');
+
+// 啟動時還原數據庫（如果需要）
+async function initializeDatabaseWithRestore() {
+    try {
+        const restoreManager = new DatabaseRestoreManager();
+        
+        // 檢查並還原數據庫
+        const restored = await restoreManager.restoreDatabase();
+        if (restored) {
+            console.log('🎯 數據庫還原檢查完成');
+            
+            // 初始化數據庫
+            database.initializeDatabase();
+            
+            // 延遲執行啟動備份
+            setTimeout(() => {
+                restoreManager.performStartupBackup();
+            }, 5000);
+            
+        } else {
+            console.error('❌ 數據庫還原失敗');
+        }
+    } catch (error) {
+        console.error('💥 數據庫初始化錯誤:', error.message);
+        // 即使還原失敗，也嘗試初始化數據庫
+        database.initializeDatabase();
+    }
+}
+
+// 執行數據庫初始化
+initializeDatabaseWithRestore();
 
 // 創建API路由器以支援子文件夾部署
 const apiRouter = express.Router();
@@ -432,8 +463,8 @@ function setupBackupSchedule() {
         return;
     }
     
-    // 設置備份時間 - 默認每天凌晨 2:00 (香港時間)
-    const backupSchedule = process.env.BACKUP_CRON_SCHEDULE || '0 2 * * *';
+    // 設置備份時間 - 默認每 4 小時備份一次
+    const backupSchedule = process.env.BACKUP_CRON_SCHEDULE || '0 */4 * * *';
     
     console.log(`📅 設置定時備份: ${backupSchedule} (${process.env.TZ || 'Asia/Hong_Kong'})`);
     

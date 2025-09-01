@@ -21,7 +21,9 @@
     "backup:service": "node backup-service.js",
     "backup:cron-job": "node backup-cron-job.js",
     "render:setup": "node render-backup-setup.js",
-    "render:manager": "node render-backup-manager.js"
+    "render:manager": "node render-backup-manager.js",
+    "db:restore": "node db-restore-on-startup.js",
+    "db:check": "node -e \"const manager = require('./db-restore-on-startup'); new manager().isDatabaseValid().then(valid => console.log(valid ? '✅ 數據庫正常' : '❌ 數據庫異常'))\""
   },
   "dependencies": {
     "body-parser": "^1.20.2",
