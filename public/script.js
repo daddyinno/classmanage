@@ -2714,11 +2714,11 @@ function getCurrentStageConfig() {
         { image: './images/phase3.jpg', name: '第3級', min: 40, max: 59, description: '持續進步' },
         { image: './images/phase4.jpg', name: '第4級', min: 60, max: 79, description: '穩定發展' },
         { image: './images/phase5.jpg', name: '第5級', min: 80, max: 99, description: '加速成長' },
-        { image: './images/phase6.jpg', name: '第6級', min: 100, max: 119, description: '突破自我' },
-        { image: './images/phase7.jpg', name: '第7級', min: 120, max: 139, description: '優秀表現' },
-        { image: './images/phase8.jpg', name: '第8級', min: 140, max: 159, description: '卓越水準' },
-        { image: './images/phase9.jpg', name: '第9級', min: 160, max: 179, description: '接近完美' },
-        { image: './images/phase10.jpg', name: '第10級', min: 180, max: 999999, description: '完美境界' }
+        { image: './images/phase6.jpg', name: '第6級', min: 100, max: 129, description: '突破自我' },
+        { image: './images/phase7.jpg', name: '第7級', min: 130, max: 159, description: '優秀表現' },
+        { image: './images/phase8.jpg', name: '第8級', min: 160, max: 189, description: '卓越水準' },
+        { image: './images/phase9.jpg', name: '第9級', min: 190, max: 219, description: '接近完美' },
+        { image: './images/phase10.jpg', name: '第10級', min: 220, max: 999999, description: '完美境界' }
     ];
     console.log('使用默認階段配置:', defaultStages);
     return defaultStages;

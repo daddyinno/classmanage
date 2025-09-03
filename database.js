@@ -101,6 +101,20 @@ function initializeDatabase() {
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
 
+        // 將既有自定義階段（若存在）調整為新規則：第6級起每級30分
+        db.serialize(() => {
+            db.run(`UPDATE custom_stages SET min_points = 100, max_points = 129, updated_at = CURRENT_TIMESTAMP 
+                    WHERE (stage_key = 'level6' OR name = '第6級') AND (min_points != 100 OR max_points != 129)`);
+            db.run(`UPDATE custom_stages SET min_points = 130, max_points = 159, updated_at = CURRENT_TIMESTAMP 
+                    WHERE (stage_key = 'level7' OR name = '第7級') AND (min_points != 130 OR max_points != 159)`);
+            db.run(`UPDATE custom_stages SET min_points = 160, max_points = 189, updated_at = CURRENT_TIMESTAMP 
+                    WHERE (stage_key = 'level8' OR name = '第8級') AND (min_points != 160 OR max_points != 189)`);
+            db.run(`UPDATE custom_stages SET min_points = 190, max_points = 219, updated_at = CURRENT_TIMESTAMP 
+                    WHERE (stage_key = 'level9' OR name = '第9級') AND (min_points != 190 OR max_points != 219)`);
+            db.run(`UPDATE custom_stages SET min_points = 220, max_points = 999999, updated_at = CURRENT_TIMESTAMP 
+                    WHERE (stage_key = 'level10' OR name = '第10級') AND (min_points != 220 OR max_points != 999999)`);
+        });
+
         // 自定義行為配置表
         db.run(`CREATE TABLE IF NOT EXISTS custom_behaviors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
