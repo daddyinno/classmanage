@@ -39,21 +39,7 @@ function initializeDatabase() {
             }
         });
 
-        // 添加最後餵食時間字段（用於飢餓系統）
-        db.run(`ALTER TABLE students ADD COLUMN last_fed_at DATETIME`, (err) => {
-            if (err && !err.message.includes('duplicate column name')) {
-                console.error('添加last_fed_at字段失败:', err);
-            } else if (!err) {
-                // 為現有學生設置初始餵食時間為當前時間
-                db.run(`UPDATE students SET last_fed_at = CURRENT_TIMESTAMP WHERE last_fed_at IS NULL`, (updateErr) => {
-                    if (updateErr) {
-                        console.error('更新初始餵食時間失败:', updateErr);
-                    } else {
-                        console.log('✅ 已為現有學生設置初始餵食時間');
-                    }
-                });
-            }
-        });
+        // 飢餓系統相關字段初始化已移除
 
         // 积分记录表
         db.run(`CREATE TABLE IF NOT EXISTS point_logs (
@@ -351,32 +337,7 @@ function getPurchases(studentId, callback) {
     }
 }
 
-// ============ 飢餓系統相關函數 ============
-
-// 更新學生最後餵食時間（當獲得超級市場物品時）
-function updateLastFedTime(studentId, callback) {
-    db.run(
-        "UPDATE students SET last_fed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        [studentId],
-        callback
-    );
-}
-
-// 獲取飢餓的學生（2週沒有獲得超級市場物品）
-function getHungryStudents(callback) {
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    
-    db.all(
-        `SELECT s.*, 
-         julianday('now') - julianday(s.last_fed_at) as days_since_fed
-         FROM students s 
-         WHERE s.last_fed_at IS NULL 
-            OR s.last_fed_at < datetime('now', '-15 days')
-            AND s.points > 0`,
-        callback
-    );
-}
+// ============ 飢餓系統相關函數已移除 ============
 
 // 獲取階段的起始分數
 function getStageStartScore(stageName) {
@@ -410,83 +371,7 @@ function getPreviousStage(currentStage) {
     return 'level1'; // 最低級別
 }
 
-// 處理學生飢餓降級
-function processHungerDowngrade(studentId, callback) {
-    // 獲取學生當前信息
-    db.get("SELECT * FROM students WHERE id = ?", [studentId], (err, student) => {
-        if (err || !student) {
-            return callback(err || new Error('學生不存在'));
-        }
-        
-        // 獲取前一個階段
-        const previousStage = getPreviousStage(student.stage);
-        const newPoints = getStageStartScore(previousStage);
-        
-        // 更新學生積分和階段，並重置餵食時間
-        db.run(
-            `UPDATE students 
-             SET points = ?, stage = ?, last_fed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
-             WHERE id = ?`,
-            [newPoints, previousStage, studentId],
-            function(err) {
-                if (err) {
-                    return callback(err);
-                }
-                
-                // 記錄餓死降級日誌
-                addPointLog(
-                    studentId, 
-                    newPoints - student.points, 
-                    '飢餓降級', 
-                    '2週未獲得超級市場物品，角色餓死降級',
-                    (logErr) => {
-                        if (logErr) {
-                            console.error('記錄飢餓降級日誌失敗:', logErr);
-                        }
-                        callback(null, {
-                            studentName: student.name,
-                            oldStage: student.stage,
-                            newStage: previousStage,
-                            oldPoints: student.points,
-                            newPoints: newPoints
-                        });
-                    }
-                );
-            }
-        );
-    });
-}
-
-// 批量處理所有飢餓學生
-function processAllHungryStudents(callback) {
-    getHungryStudents((err, hungryStudents) => {
-        if (err) {
-            return callback(err);
-        }
-        
-        if (hungryStudents.length === 0) {
-            return callback(null, []);
-        }
-        
-        const results = [];
-        let completed = 0;
-        
-        hungryStudents.forEach(student => {
-            processHungerDowngrade(student.id, (downgradErr, result) => {
-                if (downgradErr) {
-                    console.error(`處理學生 ${student.name} 飢餓降級失敗:`, downgradErr);
-                } else {
-                    results.push(result);
-                }
-                
-                completed++;
-                if (completed === hungryStudents.length) {
-                    callback(null, results);
-                }
-            });
-        });
-    });
-}
+// 飢餓降級處理函數已移除
 
 // 重置所有學生分數和記錄
 function resetAllStudentsData(callback) {
@@ -718,10 +603,7 @@ module.exports = {
     updateWalletPoints,
     purchaseItem,
     getPurchases,
-    updateLastFedTime,
-    getHungryStudents,
-    processHungerDowngrade,
-    processAllHungryStudents,
+    // 飢餓系統函數導出已移除
     resetAllStudentsData,
     getCustomStages,
     saveCustomStages,

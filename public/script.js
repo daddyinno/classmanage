@@ -196,10 +196,7 @@ function createStudentCard(student) {
                  <small>${getProgressText(student.points, stage)}</small>
              </div>
              
-             <!-- 飢餓狀態 -->
-             <div class="hunger-status">
-                 ${getHungerStatusText(student)}
-             </div>
+             <!-- 飢餓狀態已移除 -->
             
 
             
@@ -1007,35 +1004,13 @@ window.onclick = function(event) {
 
 // 移除購買功能，超級市場現在直接使用加分功能
 
-// 更新學生的餵食時間（本地數據）
-function updateStudentFeedingTime(studentId) {
-    const student = students.find(s => s.id === studentId);
-    if (student) {
-        // 更新為當前時間
-        student.last_fed_at = new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
-        
-        // 立即重新渲染這個學生的卡片
-        renderSingleStudent(student);
-        
-        console.log(`✅ 已更新學生 ${student.name} 的餵食時間`);
-    }
-}
+// 餵食時間更新函數已移除
 
 // 渲染單個學生卡片（用於即時更新）
 function renderSingleStudent(student) {
     const studentCard = document.querySelector(`[data-student-id="${student.id}"]`);
     if (studentCard) {
-        // 找到飢餓狀態元素並更新
-        const hungerStatusElement = studentCard.querySelector('.hunger-status');
-        if (hungerStatusElement) {
-            // 先顯示餵食成功提示
-            hungerStatusElement.innerHTML = '<span class="hunger-fed">🍎 餵食成功！</span>';
-            
-            // 2秒後更新為正常的飢餓狀態
-            setTimeout(() => {
-                hungerStatusElement.innerHTML = getHungerStatusText(student);
-            }, 2000);
-        }
+        // 飢餓狀態更新邏輯已移除
         
         // 添加一個簡短的視覺反饋
         studentCard.style.transform = 'scale(1.02)';
@@ -1057,29 +1032,7 @@ function getStageNumber(stageName) {
     return stageName;
 }
 
-// 計算學生飢餓狀態文本
-function getHungerStatusText(student) {
-    // 如果沒有最後餵食時間，假設是剛創建的學生
-    if (!student.last_fed_at) {
-        return '<span class="hunger-safe">🍎 營養充足</span>';
-    }
-    
-    // 計算天數差異
-    const lastFed = new Date(student.last_fed_at);
-    const now = new Date();
-    const daysSinceLastFed = Math.floor((now - lastFed) / (1000 * 60 * 60 * 24));
-    const daysUntilHungry = 15 - daysSinceLastFed;
-    
-    if (daysUntilHungry <= 0) {
-        return '<span class="hunger-critical">💀 已饑餓 (即將降級)</span>';
-    } else if (daysUntilHungry <= 2) {
-        return `<span class="hunger-critical">⚠️ ${daysUntilHungry} 天後饑餓</span>`;
-    } else if (daysUntilHungry <= 5) {
-        return `<span class="hunger-warning">🍽️ ${daysUntilHungry} 天後饑餓</span>`;
-    } else {
-        return `<span class="hunger-safe">🍎 ${daysUntilHungry} 天後饑餓</span>`;
-    }
-}
+// 飢餓狀態計算函數已移除
 
 // 工具函数
 function escapeHtml(text) {
@@ -1571,7 +1524,7 @@ function showBatchDowngradeAnimation(downgradedStudents) {
             <div class="downgrade-bg"></div>
             <div class="downgrade-text">
                 <h1>📉 批量降级通知</h1>
-                <h2>共有 ${downgradedStudents.length} 位學生因飢餓降級</h2>
+                <h2>共有 ${downgradedStudents.length} 位學生降級</h2>
                 <div class="students-list">
                     ${downgradedStudents.map(student => `
                         <div class="student-item">
@@ -2086,7 +2039,7 @@ async function applySelectedBehavior() {
                     });
                     
                     // 立即更新本地學生數據中的餵食時間
-                    updateStudentFeedingTime(student.id);
+                    // 餵食時間更新調用已移除
                     
                 } catch (feedError) {
                     console.error('更新餵食時間失敗:', feedError);
