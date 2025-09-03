@@ -80,11 +80,11 @@ function initializeDatabase() {
             (3, 'level3', 40, 59, '第3級 - 持續進步'),
             (4, 'level4', 60, 79, '第4級 - 穩定發展'),
             (5, 'level5', 80, 99, '第5級 - 加速成長'),
-            (6, 'level6', 100, 119, '第6級 - 突破自我'),
-            (7, 'level7', 120, 139, '第7級 - 優秀表現'),
-            (8, 'level8', 140, 159, '第8級 - 卓越水準'),
-            (9, 'level9', 160, 179, '第9級 - 接近完美'),
-            (10, 'level10', 180, 999999, '第10級 - 完美境界')
+            (6, 'level6', 100, 129, '第6級 - 突破自我'),
+            (7, 'level7', 130, 159, '第7級 - 優秀表現'),
+            (8, 'level8', 160, 189, '第8級 - 卓越水準'),
+            (9, 'level9', 190, 219, '第9級 - 接近完美'),
+            (10, 'level10', 220, 999999, '第10級 - 完美境界')
         `);
 
         // 自定義階段配置表
@@ -212,11 +212,11 @@ function getStageByPoints(points) {
     if (points < 60) return 'level3';      // 第3級 40-59
     if (points < 80) return 'level4';      // 第4級 60-79
     if (points < 100) return 'level5';     // 第5級 80-99
-    if (points < 120) return 'level6';     // 第6級 100-119
-    if (points < 140) return 'level7';     // 第7級 120-139
-    if (points < 160) return 'level8';     // 第8級 140-159
-    if (points < 180) return 'level9';     // 第9級 160-179
-    return 'level10';                      // 第10級 180+
+    if (points < 130) return 'level6';     // 第6級 100-129
+    if (points < 160) return 'level7';     // 第7級 130-159
+    if (points < 190) return 'level8';     // 第8級 160-189
+    if (points < 220) return 'level9';     // 第9級 190-219
+    return 'level10';                      // 第10級 220+
 }
 
 // 获取积分记录
@@ -342,16 +342,16 @@ function getPurchases(studentId, callback) {
 // 獲取階段的起始分數
 function getStageStartScore(stageName) {
     const stageRanges = {
-        'level1': 0,    // 第1級: 0-9分
-        'level2': 10,   // 第2級: 10-19分
-        'level3': 20,   // 第3級: 20-39分
-        'level4': 40,   // 第4級: 40-59分
-        'level5': 60,   // 第5級: 60-89分
-        'level6': 90,   // 第6級: 90-129分
-        'level7': 130,  // 第7級: 130-179分
-        'level8': 180,  // 第8級: 180-239分
-        'level9': 240,  // 第9級: 240-319分
-        'level10': 320  // 第10級: 320+分
+        'level1': 0,    // 第1級: 0-19分
+        'level2': 20,   // 第2級: 20-39分
+        'level3': 40,   // 第3級: 40-59分
+        'level4': 60,   // 第4級: 60-79分
+        'level5': 80,   // 第5級: 80-99分
+        'level6': 100,  // 第6級: 100-129分
+        'level7': 130,  // 第7級: 130-159分
+        'level8': 160,  // 第8級: 160-189分
+        'level9': 190,  // 第9級: 190-219分
+        'level10': 220  // 第10級: 220+分
     };
     
     return stageRanges[stageName] || 0;

@@ -227,11 +227,11 @@ apiRouter.get('/stages', (req, res) => {
         { name: 'level3', min: 40, max: 59, description: '第3級', emoji: '3️⃣' },
         { name: 'level4', min: 60, max: 79, description: '第4級', emoji: '4️⃣' },
         { name: 'level5', min: 80, max: 99, description: '第5級', emoji: '5️⃣' },
-        { name: 'level6', min: 100, max: 119, description: '第6級', emoji: '6️⃣' },
-        { name: 'level7', min: 120, max: 139, description: '第7級', emoji: '7️⃣' },
-        { name: 'level8', min: 140, max: 159, description: '第8級', emoji: '8️⃣' },
-        { name: 'level9', min: 160, max: 179, description: '第9級', emoji: '9️⃣' },
-        { name: 'level10', min: 180, max: 999999, description: '第10級', emoji: '🔟' }
+        { name: 'level6', min: 100, max: 129, description: '第6級', emoji: '6️⃣' },
+        { name: 'level7', min: 130, max: 159, description: '第7級', emoji: '7️⃣' },
+        { name: 'level8', min: 160, max: 189, description: '第8級', emoji: '8️⃣' },
+        { name: 'level9', min: 190, max: 219, description: '第9級', emoji: '9️⃣' },
+        { name: 'level10', min: 220, max: 999999, description: '第10級', emoji: '🔟' }
     ];
     res.json(stages);
 });
