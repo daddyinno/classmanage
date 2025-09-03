@@ -287,6 +287,58 @@ async function addStudent() {
 
 
 
+// 清除所有記錄
+async function resetAllData() {
+    // 安全檢查：學生模式下禁止重置操作
+    if (!isTeacherMode) {
+        console.warn('安全提示：學生模式下無法進行重置操作');
+        showError('需要老師權限才能進行此操作');
+        return;
+    }
+    
+    const confirmMsg = '⚠️ 警告！這將清除所有學生的積分、等級、購買記錄和積分日誌。\n\n此操作無法復原，確定要繼續嗎？';
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    const doubleConfirmMsg = '🚨 最後確認！這將重置所有學生資料到初始狀態。\n\n請再次確認是否要執行？';
+    
+    if (!confirm(doubleConfirmMsg)) {
+        return;
+    }
+    
+    try {
+        console.log('🗑️ 開始清除所有記錄...');
+        
+        const response = await fetch(`${API_BASE}/students/reset-all`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ 所有記錄清除成功');
+            showSuccess('所有學生記錄已重置！');
+            
+            // 重新載入資料
+            await loadStudents();
+            loadLogs();
+            
+        } else {
+            console.error('❌ 清除記錄失敗:', data);
+            showError(data.error || '清除記錄失敗');
+        }
+    } catch (error) {
+        console.error('清除記錄網路錯誤:', error);
+        showError('網路錯誤: ' + error.message);
+    }
+}
+
 // 带动画效果的积分调整
 async function adjustPointsWithAnimation(studentId, points, reason) {
     console.log(`🎯 adjustPointsWithAnimation 被調用: 學生ID=${studentId}, 積分變化=${points}, 理由="${reason}", 老師模式=${isTeacherMode}`);
