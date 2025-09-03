@@ -3375,9 +3375,7 @@ button:active {
     }
 }
 
-.student-card {
-    animation: fadeInUp 0.5s ease forwards;
-}
+/* .student-card 載入動畫效果已移除 */
 
 @keyframes pulse {
     0% { transform: scale(1); }
