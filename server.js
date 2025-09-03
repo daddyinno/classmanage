@@ -230,6 +230,19 @@ apiRouter.post('/students/process-hunger', requireTeacherAuth, (req, res) => {
     });
 });
 
+// 重置所有學生資料
+apiRouter.post('/students/reset-all', requireTeacherAuth, (req, res) => {
+    database.resetAllStudentsData((err, result) => {
+        if (err) {
+            return res.status(500).json({ error: '重置資料失敗' });
+        }
+        res.json({ 
+            message: '所有學生資料已重置',
+            result: result
+        });
+    });
+});
+
 // 获取阶段信息 (10级系统，每20分一级)
 apiRouter.get('/stages', (req, res) => {
     const stages = [

@@ -463,6 +463,54 @@ function processAllHungryStudents(callback) {
     });
 }
 
+// 重置所有學生分數和記錄
+function resetAllStudentsData(callback) {
+    db.serialize(() => {
+        // 開始事務
+        db.run("BEGIN TRANSACTION", (err) => {
+            if (err) return callback(err);
+            
+            // 重置所有學生分數到0，階段到level1
+            db.run(
+                "UPDATE students SET points = 0, stage = 'level1', wallet_points = 0, updated_at = CURRENT_TIMESTAMP", 
+                function(err) {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return callback(err);
+                    }
+                    
+                    // 清空積分記錄
+                    db.run("DELETE FROM point_logs", function(err) {
+                        if (err) {
+                            db.run("ROLLBACK");
+                            return callback(err);
+                        }
+                        
+                        // 清空購買記錄
+                        db.run("DELETE FROM purchases", function(err) {
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return callback(err);
+                            }
+                            
+                            // 提交事務
+                            db.run("COMMIT", function(err) {
+                                if (err) {
+                                    db.run("ROLLBACK");
+                                    return callback(err);
+                                }
+                                
+                                console.log('✅ 所有學生資料已重置');
+                                callback(null, { message: '所有學生資料已重置' });
+                            });
+                        });
+                    });
+                }
+            );
+        });
+    });
+}
+
 module.exports = {
     db,
     initializeDatabase,
@@ -482,5 +530,6 @@ module.exports = {
     updateLastFedTime,
     getHungryStudents,
     processHungerDowngrade,
-    processAllHungryStudents
+    processAllHungryStudents,
+    resetAllStudentsData
 };
