@@ -429,7 +429,8 @@ apiRouter.get('/behaviors', (req, res) => {
         // 將資料庫格式轉換為前端期望的格式
         const result = {
             positive: behaviors.filter(b => b.behavior_type === 'positive'),
-            negative: behaviors.filter(b => b.behavior_type === 'negative')
+            negative: behaviors.filter(b => b.behavior_type === 'negative'),
+            supermarket: behaviors.filter(b => b.behavior_type === 'supermarket')
         };
         
         res.json(result);

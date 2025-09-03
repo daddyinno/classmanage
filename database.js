@@ -118,7 +118,7 @@ function initializeDatabase() {
         // 自定義行為配置表
         db.run(`CREATE TABLE IF NOT EXISTS custom_behaviors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            behavior_type TEXT NOT NULL CHECK (behavior_type IN ('positive', 'negative')),
+            behavior_type TEXT NOT NULL CHECK (behavior_type IN ('positive', 'negative', 'supermarket')),
             icon TEXT NOT NULL,
             name TEXT NOT NULL,
             points INTEGER NOT NULL,
@@ -627,6 +627,7 @@ function saveCustomBehaviors(behaviorsData, callback) {
                 // 計算總插入數量
                 if (behaviorsData.positive) totalInserts += behaviorsData.positive.length;
                 if (behaviorsData.negative) totalInserts += behaviorsData.negative.length;
+                if (behaviorsData.supermarket) totalInserts += behaviorsData.supermarket.length;
                 
                 if (totalInserts === 0) {
                     // 沒有行為要插入，直接提交
@@ -661,6 +662,27 @@ function saveCustomBehaviors(behaviorsData, callback) {
                         db.run(
                             "INSERT INTO custom_behaviors (behavior_type, icon, name, points, description, display_order) VALUES (?, ?, ?, ?, ?, ?)",
                             ['negative', behavior.icon, behavior.name, behavior.points, behavior.description || '', index],
+                            function(err) {
+                                if (err) {
+                                    db.run("ROLLBACK");
+                                    return callback(err);
+                                }
+                                
+                                completed++;
+                                if (completed === totalInserts) {
+                                    db.run("COMMIT", callback);
+                                }
+                            }
+                        );
+                    });
+                }
+                
+                // 插入超級市場行為
+                if (behaviorsData.supermarket) {
+                    behaviorsData.supermarket.forEach((behavior, index) => {
+                        db.run(
+                            "INSERT INTO custom_behaviors (behavior_type, icon, name, points, description, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+                            ['supermarket', behavior.icon, behavior.name, behavior.points, behavior.description || '', index],
                             function(err) {
                                 if (err) {
                                     db.run("ROLLBACK");

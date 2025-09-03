@@ -244,7 +244,7 @@ function getProgressText(points, stageInfo) {
     return `距離 ${nextStage.name} 還需 ${pointsNeeded} 分`;
 }
 
-// 添加学生
+// 添加學生
 async function addStudent() {
     // 安全檢查：學生模式下禁止添加學生
     if (!isTeacherMode) {
@@ -339,7 +339,7 @@ async function resetAllData() {
     }
 }
 
-// 带动画效果的积分调整
+// 帶動畫效果的積分調整
 async function adjustPointsWithAnimation(studentId, points, reason) {
     console.log(`🎯 adjustPointsWithAnimation 被調用: 學生ID=${studentId}, 積分變化=${points}, 理由="${reason}", 老師模式=${isTeacherMode}`);
     
@@ -376,22 +376,22 @@ async function adjustPointsWithAnimation(studentId, points, reason) {
         if (response.ok) {
 
             
-            // 显示积分变化动画
+            // 顯示積分變化動畫
             showPointsAnimation(studentId, points);
             
-            // 如果是大量加分，显示特殊庆祝效果
+            // 如果是大量加分，顯示特殊慶祝效果
             if (points >= 10) {
                 showSpecialCelebration(studentId, points);
             }
             
-            // 重新加载数据
+            // 重新加載數據
             await loadStudents();
             loadLogs();
             
-            // 检查是否升级或降级
+            // 檢查是否升級或降級
             const updatedStudent = students.find(s => s.id === studentId);
             if (updatedStudent && updatedStudent.stage !== oldStage) {
-                // 获取旧的和新的阶段信息
+                // 獲取舊的和新的階段信息
                 const oldStageInfo = getStageInfoByName(oldStage);
                 const newStageInfo = getStageInfoByName(updatedStudent.stage);
                 
@@ -540,7 +540,7 @@ function createFirework(container) {
 
 
 
-// 调整单个学生积分（保留原函数用于兼容性）
+// 調整單個學生積分（保留原函數用於兼容性）
 async function adjustPoints(studentId, points) {
     await adjustPointsWithAnimation(studentId, points, `${points > 0 ? '加' : '减'}${Math.abs(points)}分`);
 }
@@ -555,11 +555,17 @@ async function adjustAllPoints(points) {
     }
     
     const action = points > 0 ? '加' : '减';
-    const confirmMsg = `确定要给全班同学${action}${Math.abs(points)}分吗？`;
+    const confirmMsg = `確定要給全班同學${action}${Math.abs(points)}分嗎？`;
     
     if (!confirm(confirmMsg)) {
         return;
     }
+    
+    // 記錄所有學生的舊階段信息
+    const studentsOldStages = {};
+    students.forEach(student => {
+        studentsOldStages[student.id] = student.stage;
+    });
     
     try {
         const response = await fetch(`${API_BASE}/students/all/points`, {
@@ -577,18 +583,87 @@ async function adjustAllPoints(points) {
         const data = await response.json();
         
         if (response.ok) {
-            loadStudents();
+            // 先重新加載學生數據
+            await loadStudents();
             loadLogs();
-            showSuccess(`全班积分${action === '加' ? '增加' : '减少'}成功！`);
+            
+            // 檢查每個學生是否有階段變化並觸發進化/退化動畫
+            const evolvedStudents = [];
+            const devolvedStudents = [];
+            
+            students.forEach(student => {
+                const oldStage = studentsOldStages[student.id];
+                const newStage = student.stage;
+                
+                if (oldStage && newStage && oldStage !== newStage) {
+                    const oldStageInfo = getStageInfoByName(oldStage);
+                    const newStageInfo = getStageInfoByName(newStage);
+                    
+                    if (oldStageInfo && newStageInfo && 
+                        typeof oldStageInfo.min === 'number' && 
+                        typeof newStageInfo.min === 'number') {
+                        
+                        const isUpgrade = isStageUpgrade(oldStageInfo, newStageInfo);
+                        
+                        if (isUpgrade) {
+                            evolvedStudents.push({
+                                student: student,
+                                oldStage: oldStageInfo,
+                                newStage: newStageInfo
+                            });
+                        } else {
+                            devolvedStudents.push({
+                                student: student,
+                                oldStage: oldStageInfo,
+                                newStage: newStageInfo
+                            });
+                        }
+                    }
+                }
+            });
+            
+            // 顯示批量進化/退化動畫
+            if (evolvedStudents.length > 0) {
+                if (evolvedStudents.length === 1) {
+                    // 單個學生進化：顯示完整動畫
+                    const evolved = evolvedStudents[0];
+                    showEvolutionAnimation(evolved.student, evolved.oldStage, evolved.newStage);
+                } else {
+                    // 多個學生進化：顯示批量動畫
+                    showBatchEvolutionAnimation(evolvedStudents.map(e => e.student));
+                }
+            }
+            
+            if (devolvedStudents.length > 0) {
+                if (devolvedStudents.length === 1) {
+                    // 單個學生退化：顯示完整動畫
+                    const devolved = devolvedStudents[0];
+                    showDowngradeAnimation(devolved.student, devolved.oldStage, devolved.newStage);
+                } else {
+                    // 多個學生退化：顯示批量動畫
+                    showBatchDowngradeAnimation(devolvedStudents.map(d => d.student));
+                }
+            }
+            
+            // 根據結果顯示成功消息
+            let successMessage = `全班積分${action === '加' ? '增加' : '減少'}成功！`;
+            if (evolvedStudents.length > 0) {
+                successMessage += ` 🎉 有 ${evolvedStudents.length} 位同學進化了！`;
+            }
+            if (devolvedStudents.length > 0) {
+                successMessage += ` 😔 有 ${devolvedStudents.length} 位同學退化了。`;
+            }
+            
+            showSuccess(successMessage);
         } else {
-            showError('全班积分调整失败: ' + data.error);
+            showError('全班積分調整失敗: ' + data.error);
         }
     } catch (error) {
         showError('網路錯誤: ' + error.message);
     }
 }
 
-// 删除学生
+// 刪除學生
 async function deleteStudent(studentId) {
     // 安全檢查：學生模式下禁止刪除學生
     if (!isTeacherMode) {
@@ -600,7 +675,7 @@ async function deleteStudent(studentId) {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
     
-    if (!confirm(`确定要删除学生 "${student.name}" 吗？此操作不可恢复！`)) {
+    if (!confirm(`確定要刪除學生 "${student.name}" 嗎？此操作不可復原！`)) {
         return;
     }
     
@@ -615,11 +690,11 @@ async function deleteStudent(studentId) {
         const data = await response.json();
         
         if (response.ok) {
-            showSuccess('学生删除成功！');
+            showSuccess('學生刪除成功！');
             loadStudents();
             loadLogs();
         } else {
-            showError('删除失败: ' + data.error);
+            showError('刪除失敗: ' + data.error);
         }
     } catch (error) {
         showError('網路錯誤: ' + error.message);
@@ -633,7 +708,9 @@ async function loadCustomBehaviors() {
         if (response.ok) {
             const data = await response.json();
             // 如果有自定義行為資料，使用它
-            if (data.positive && data.positive.length > 0 || data.negative && data.negative.length > 0) {
+            if (data.positive && data.positive.length > 0 || 
+                data.negative && data.negative.length > 0 || 
+                data.supermarket && data.supermarket.length > 0) {
                 customBehaviors = data;
                 console.log('✅ 從資料庫載入自定義行為配置:', customBehaviors);
             } else {
@@ -689,7 +766,20 @@ async function saveCustomBehaviors() {
 
 // 獲取當前行為選項（自定義或預設）
 function getCurrentBehaviorOptions() {
-    return customBehaviors || BEHAVIOR_OPTIONS;
+    if (!customBehaviors) {
+        return BEHAVIOR_OPTIONS;
+    }
+    
+    // 確保所有必要的行為類型都存在
+    const result = {
+        positive: customBehaviors.positive || BEHAVIOR_OPTIONS.positive,
+        negative: customBehaviors.negative || BEHAVIOR_OPTIONS.negative,
+        supermarket: (customBehaviors.supermarket && customBehaviors.supermarket.length > 0) 
+                    ? customBehaviors.supermarket 
+                    : BEHAVIOR_OPTIONS.supermarket
+    };
+    
+    return result;
 }
 
 // 預設行為選項
@@ -755,7 +845,7 @@ const BEHAVIOR_OPTIONS = {
 
 
 
-// 加载积分记录
+// 加載積分記錄
 async function loadLogs() {
     try {
         const response = await fetch(`${API_BASE}/logs`);
@@ -766,7 +856,7 @@ async function loadLogs() {
             updateStudentFilterOptions();
             renderLogs();
         } else {
-            console.error('加载记录失败:', data.error);
+            console.error('加載記錄失敗:', data.error);
         }
     } catch (error) {
         console.error('網路錯誤:', error.message);
@@ -793,7 +883,7 @@ function updateStudentFilterOptions() {
     });
 }
 
-// 渲染积分记录
+// 渲染積分記錄
 function renderLogs() {
     const filteredLogs = getFilteredLogs();
     const container = document.getElementById('logsContainer');
@@ -1012,7 +1102,7 @@ function showNotification(message, type) {
     notification.className = `notification ${type}`;
     notification.textContent = message;
     
-    // 添加样式
+    // 添加樣式
     Object.assign(notification.style, {
         position: 'fixed',
         top: '20px',
@@ -1055,16 +1145,16 @@ function showNotification(message, type) {
     }, 3000);
 }
 
-// 显示积分变化动画
+// 顯示積分變化動畫
 function showPointsAnimation(studentId, points) {
     const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
     if (!studentCard) return;
     
-    // 创建主要的积分变化动画
+    // 創建主要的積分變化動畫
     const animationDiv = document.createElement('div');
     animationDiv.className = 'points-animation';
     
-    // 根据积分正负显示不同的内容和动画
+    // 根據積分正負顯示不同的內容和動畫
     if (points > 0) {
         animationDiv.innerHTML = `
             <div class="points-change positive">
@@ -1078,7 +1168,7 @@ function showPointsAnimation(studentId, points) {
             </div>
         `;
         
-        // 创建庆祝粒子效果
+        // 創建慶祝粒子效果
         createCelebrationParticles(studentCard);
         
         // 播放赞赏音效
@@ -1096,14 +1186,14 @@ function showPointsAnimation(studentId, points) {
             </div>
         `;
         
-        // 创建失望效果
+        // 創建失望效果
         createSadEffect(studentCard);
         
         // 播放失望音效
         playSadSound();
     }
     
-    // 设置动画样式
+    // 設置動畫樣式
     Object.assign(animationDiv.style, {
         position: 'absolute',
         top: '50%',
@@ -1120,7 +1210,7 @@ function showPointsAnimation(studentId, points) {
     studentCard.style.position = 'relative';
     studentCard.appendChild(animationDiv);
     
-    // 移除动画元素
+    // 移除動畫元素
     setTimeout(() => {
         if (animationDiv.parentNode) {
             animationDiv.parentNode.removeChild(animationDiv);
@@ -1142,7 +1232,7 @@ function showPointsAnimation(studentId, points) {
     }, 1000);
 }
 
-// 创建庆祝粒子效果
+// 創建慶祝粒子效果
 function createCelebrationParticles(container) {
     const particles = ['🌟', '⭐', '✨', '🎊', '🎉'];
     
@@ -1171,7 +1261,7 @@ function createCelebrationParticles(container) {
     }
 }
 
-// 创建失望效果
+// 創建失望效果
 function createSadEffect(container) {
     const sadElements = ['💧', '😿', '🌧️'];
     
@@ -1203,7 +1293,7 @@ function createSadEffect(container) {
 // 播放赞赏音效
 function playPraiseSound() {
     try {
-        // 创建一个简单的正面音效
+        // 創建一個簡單的正面音效
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
@@ -1221,7 +1311,7 @@ function playPraiseSound() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.3);
     } catch (e) {
-        // 忽略音频播放错误
+        // 忽略音頻播放錯誤
     }
 }
 
@@ -1245,11 +1335,11 @@ function playSadSound() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
     } catch (e) {
-        // 忽略音频播放错误
+        // 忽略音頻播放錯誤
     }
 }
 
-// 根据阶段名称获取阶段信息
+// 根據階段名稱獲取階段信息
 function getStageInfoByName(stageName) {
     const stages = getCurrentStageConfig();
     return stages.find(stage => {
@@ -1281,7 +1371,7 @@ function getStageInfoByName(stageName) {
         }
         
         return false;
-    }) || stages[0]; // 默认返回第一个阶段
+    }) || stages[0]; // 預設返回第一個階段
 }
 
 // 判断是否为升级
@@ -1289,9 +1379,9 @@ function isStageUpgrade(oldStageInfo, newStageInfo) {
     return newStageInfo.min > oldStageInfo.min;
 }
 
-// 显示降级动画
+// 顯示降級動畫
 function showDowngradeAnimation(student, oldStageInfo, newStageInfo) {
-    // 创建全屏降级动画
+    // 創建全螢幕降級動畫
     const downgradeOverlay = document.createElement('div');
     downgradeOverlay.className = 'downgrade-overlay';
     downgradeOverlay.innerHTML = `
@@ -1343,7 +1433,7 @@ function showDowngradeAnimation(student, oldStageInfo, newStageInfo) {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 1);
     } catch (e) {
-        // 忽略音频播放错误
+        // 忽略音頻播放錯誤
     }
     
     // 5秒后自动关闭
@@ -1359,13 +1449,13 @@ function showDowngradeAnimation(student, oldStageInfo, newStageInfo) {
     });
 }
 
-// 显示进化动画
+// 顯示進化動畫
 function showEvolutionAnimation(student, oldStage, newStage) {
     if (!newStage) {
         newStage = getStageByPoints(student.points);
     }
     
-    // 创建全屏进化动画
+    // 創建全螢幕進化動畫
     const evolutionOverlay = document.createElement('div');
     evolutionOverlay.className = 'evolution-overlay';
     evolutionOverlay.innerHTML = `
@@ -1373,7 +1463,7 @@ function showEvolutionAnimation(student, oldStage, newStage) {
             <div class="evolution-bg"></div>
             <div class="evolution-text">
                 <h1>🎊 恭喜！</h1>
-                <h2>${escapeHtml(student.name)} 进化了！</h2>
+                <h2>${escapeHtml(student.name)} 進化了！</h2>
                 <div class="evolution-stages">
                     <div class="stage-transition">
                         <img src="${oldStage ? oldStage.image : './images/phase1.jpg'}" alt="${oldStage ? oldStage.name : '蛋階段'}" class="old-stage" />
@@ -1393,10 +1483,10 @@ function showEvolutionAnimation(student, oldStage, newStage) {
     
     document.body.appendChild(evolutionOverlay);
     
-    // 播放进化音效（如果有的话）
+    // 播放進化音效（如果有的話）
     try {
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmUeBjiN0vLNeSsFJnfH8N2QQAoUXrTp66hVFApGn+DyvmUeBjiN0vLNeSsFJnfH8N2QQAoUXrTp66hVFApGn+DyvmUeBjiN0vLNeSsFJnfH8N2QQAoUXrTp66hVFApGn+DyvmUeBg==');
-        audio.play().catch(() => {}); // 忽略音频播放失败
+        audio.play().catch(() => {}); // 忽略音頻播放失敗
     } catch (e) {}
     
     // 5秒后自动关闭
@@ -1420,7 +1510,7 @@ function showEvolutionAnimation(student, oldStage, newStage) {
     });
 }
 
-// 显示批量升级动画
+// 顯示批量升級動畫
 function showBatchEvolutionAnimation(upgradedStudents) {
     const modal = document.createElement('div');
     modal.className = 'evolution-overlay batch-evolution';
@@ -1428,8 +1518,8 @@ function showBatchEvolutionAnimation(upgradedStudents) {
         <div class="evolution-content">
             <div class="evolution-bg"></div>
             <div class="evolution-text">
-                <h1>🎊 批量升级成功！</h1>
-                <h2>共有 ${upgradedStudents.length} 位学生升级</h2>
+                <h1>🎊 批量升級成功！</h1>
+                <h2>共有 ${upgradedStudents.length} 位學生升級</h2>
                 <div class="students-list">
                     ${upgradedStudents.map(student => `
                         <div class="student-item">
@@ -1472,7 +1562,7 @@ function showBatchEvolutionAnimation(upgradedStudents) {
     });
 }
 
-// 显示批量降级动画
+// 顯示批量降級動畫
 function showBatchDowngradeAnimation(downgradedStudents) {
     const modal = document.createElement('div');
     modal.className = 'downgrade-overlay batch-downgrade';
@@ -1481,7 +1571,7 @@ function showBatchDowngradeAnimation(downgradedStudents) {
             <div class="downgrade-bg"></div>
             <div class="downgrade-text">
                 <h1>📉 批量降级通知</h1>
-                <h2>共有 ${downgradedStudents.length} 位学生因饥饿降级</h2>
+                <h2>共有 ${downgradedStudents.length} 位學生因飢餓降級</h2>
                 <div class="students-list">
                     ${downgradedStudents.map(student => `
                         <div class="student-item">
@@ -1496,7 +1586,7 @@ function showBatchDowngradeAnimation(downgradedStudents) {
                 </div>
                 <div class="encouragement-message">
                     <span class="sad-emoji cry-animation">😢</span>
-                    <span class="encourage-text">大家要继续努力，相信可以重新升级！</span>
+                    <span class="encourage-text">大家要繼續努力，相信可以重新升級！</span>
                     <span class="sad-emoji cry-animation">💧</span>
                 </div>
                 <div class="sad-rain-effect">
@@ -2062,10 +2152,23 @@ function showAddBehaviorModal(type) {
 
 // 編輯行為
 function editBehavior(type, index) {
+    const behaviorOptions = getCurrentBehaviorOptions();
+    
+    // 檢查 type 是否存在
+    if (!behaviorOptions || !behaviorOptions[type]) {
+        console.error(`無效的行為類型: ${type}`);
+        return;
+    }
+    
+    // 檢查 index 是否有效
+    if (index < 0 || index >= behaviorOptions[type].length) {
+        console.error(`無效的行為索引: ${index}, 類型: ${type}`);
+        return;
+    }
+    
     editingBehaviorIndex = index;
     editingBehaviorType = type;
     
-    const behaviorOptions = getCurrentBehaviorOptions();
     const behavior = behaviorOptions[type][index];
     
     const modal = document.getElementById('behaviorModal');
@@ -2088,12 +2191,43 @@ function editBehavior(type, index) {
 // 刪除行為
 function deleteBehavior(type, index) {
     const behaviorOptions = getCurrentBehaviorOptions();
+    
+
+    // 檢查 type 是否存在
+    if (!behaviorOptions || !behaviorOptions[type]) {
+        console.error(`無效的行為類型: ${type}`);
+        return;
+    }
+    
+    // 檢查 index 是否有效
+    if (index < 0 || index >= behaviorOptions[type].length) {
+        console.error(`無效的行為索引: ${index}, 類型: ${type}`);
+        return;
+    }
+    
     const behavior = behaviorOptions[type][index];
     
     if (confirm(`確定要刪除「${behavior.name}」行為嗎？`)) {
         // 確保有自定義行為配置
         if (!customBehaviors) {
             customBehaviors = JSON.parse(JSON.stringify(BEHAVIOR_OPTIONS));
+        }
+        
+        // 確保指定類型的行為數組存在且不為空
+        if (!customBehaviors[type] || customBehaviors[type].length === 0) {
+            customBehaviors[type] = JSON.parse(JSON.stringify(BEHAVIOR_OPTIONS[type]));
+        }
+        
+        // 再次檢查索引是否有效（針對剛初始化的數組）
+        if (index < 0 || index >= customBehaviors[type].length) {
+            console.error(`初始化後索引仍然無效: ${index}, 自定義行為數量: ${customBehaviors[type].length}`);
+            console.error('嘗試從預設行為數組初始化...');
+            // 如果還是無效，重新從預設數組初始化
+            customBehaviors[type] = JSON.parse(JSON.stringify(BEHAVIOR_OPTIONS[type]));
+            if (index < 0 || index >= customBehaviors[type].length) {
+                console.error(`預設數組索引也無效: ${index}, 預設數組長度: ${customBehaviors[type].length}`);
+                return;
+            }
         }
         
         customBehaviors[type].splice(index, 1);
@@ -2127,6 +2261,11 @@ function saveBehavior(event) {
     // 確保有自定義行為配置
     if (!customBehaviors) {
         customBehaviors = JSON.parse(JSON.stringify(BEHAVIOR_OPTIONS));
+    }
+    
+    // 確保指定類型的行為數組存在
+    if (!customBehaviors[editingBehaviorType]) {
+        customBehaviors[editingBehaviorType] = JSON.parse(JSON.stringify(BEHAVIOR_OPTIONS[editingBehaviorType]));
     }
     
     if (editingBehaviorIndex === -1) {

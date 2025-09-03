@@ -229,7 +229,7 @@ button:active {
     font-size: 0.9em;
 }
 
-/* 学生列表样式 */
+/* 學生列表樣式 */
 .students-section {
     background: linear-gradient(145deg, rgba(224, 242, 254, 0.95) 0%, rgba(179, 229, 252, 0.2) 100%);
     padding: 25px;
@@ -256,7 +256,7 @@ button:active {
     max-width: 100%;
 }
 
-/* 学生卡片样式 */
+/* 學生卡片樣式 */
 .student-card {
     background: #ffffff;
     border-radius: 15px;
@@ -615,7 +615,7 @@ button:active {
     font-size: 0.9em;
 }
 
-/* 学生操作面板 */
+/* 學生操作面板 */
 .student-actions {
     margin-top: 15px;
     padding: 15px;
@@ -2376,7 +2376,7 @@ button:active {
     z-index: 10;
 }
 
-/* 积分记录样式 */
+/* 積分記錄樣式 */
 .logs-section {
     background: rgba(255, 255, 255, 0.95);
     padding: 25px;
@@ -2748,7 +2748,7 @@ button:active {
     font-size: 14px;
 }
 
-/* 响应式设计 */
+/* 響應式設計 */
 @media (max-width: 768px) {
     .modal-content {
         width: 95%;
@@ -3224,7 +3224,7 @@ button:active {
     }
 }
 
-/* 原有响应式设计继续 */
+/* 原有響應式設計繼續 */
 @media (max-width: 768px) {
     .container {
         padding: 10px;
@@ -3363,7 +3363,7 @@ button:active {
     font-size: 0.8em;
 }
 
-/* 动画效果 */
+/* 動畫效果 */
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -3409,9 +3409,9 @@ button:active {
     display: block;
 }
 
-/* 新增动画效果 */
+/* 新增動畫效果 */
 
-/* 面板展开动画 */
+/* 面板展開動畫 */
 @keyframes slideDown {
     from {
         opacity: 0;
@@ -3425,7 +3425,7 @@ button:active {
     }
 }
 
-/* 积分变化动画 */
+/* 積分變化動畫 */
 @keyframes pointsFloat {
     0% {
         opacity: 1;
@@ -3441,7 +3441,7 @@ button:active {
     }
 }
 
-/* 卡片弹跳动画 - 正分 */
+/* 卡片彈跳動畫 - 正分 */
 @keyframes cardBouncePositive {
     0% { transform: translateY(0) scale(1); }
     30% { 
@@ -3452,7 +3452,7 @@ button:active {
     100% { transform: translateY(0) scale(1); }
 }
 
-/* 卡片弹跳动画 - 负分 */
+/* 卡片彈跳動畫 - 負分 */
 @keyframes cardBounceNegative {
     0% { transform: translateY(0) scale(1); }
     30% { 
@@ -3463,7 +3463,7 @@ button:active {
     100% { transform: translateY(0) scale(1); }
 }
 
-/* 进化动画样式 */
+/* 進化動畫樣式 */
 .evolution-overlay {
     position: fixed;
     top: 0;
@@ -4714,7 +4714,7 @@ button:active {
     }
 }
 
-/* 积分变化动画样式 */
+/* 積分變化動畫樣式 */
 .points-animation {
     text-align: center;
 }
@@ -4741,7 +4741,7 @@ button:active {
     color: #f56565;
 }
 
-/* 赞赏动画 */
+/* 讚賞動畫 */
 .praise-animation {
     display: flex;
     flex-direction: column;
@@ -4766,7 +4766,7 @@ button:active {
     font-weight: bold;
 }
 
-/* 伤心动画 */
+/* 傷心動畫 */
 .sad-animation {
     display: flex;
     flex-direction: column;
@@ -4790,7 +4790,7 @@ button:active {
     font-weight: bold;
 }
 
-/* 动画关键帧 */
+/* 動畫關鍵幀 */
 @keyframes pointsTextBounce {
     0% { transform: scale(0.5); opacity: 0; }
     50% { transform: scale(1.3); opacity: 1; }
@@ -5032,7 +5032,7 @@ button:active {
     20%, 40%, 60%, 80% { transform: translateX(2px); }
 }
 
-/* 响应式优化 */
+/* 響應式優化 */
 @media (max-width: 768px) {
     .action-row {
         grid-template-columns: 1fr 1fr;
