@@ -28,10 +28,15 @@ if (BASE_PATH) {
 function requireTeacherAuth(req, res, next) {
     const authHeader = req.headers['x-teacher-mode'];
     
+    // 添加詳細日誌
+    console.log(`🔐 權限檢查: X-Teacher-Mode=${authHeader}, 路徑=${req.path}, 方法=${req.method}`);
+    
     // 如果有特定的老師模式標頭，允許通過
     if (authHeader === 'true') {
+        console.log(`✅ 老師權限驗證通過`);
         next();
     } else {
+        console.log(`❌ 權限驗證失敗: 需要老師權限`);
         res.status(403).json({ 
             error: '需要老師權限', 
             message: '此操作需要老師權限才能執行' 
@@ -127,10 +132,15 @@ apiRouter.post('/students/:id/points', requireTeacherAuth, (req, res) => {
         return res.status(400).json({ error: '无效的参数' });
     }
     
+    // 添加詳細日誌
+    console.log(`📝 更新積分請求: 學生ID=${studentId}, 積分變化=${points}, 理由="${reason || '手动调整'}"`);
+    
     database.updateStudentPoints(studentId, points, reason || '手动调整', (err) => {
         if (err) {
+            console.error(`❌ 更新積分失敗: 學生ID=${studentId}, 錯誤=`, err);
             return res.status(500).json({ error: '更新积分失败' });
         }
+        console.log(`✅ 積分更新成功: 學生ID=${studentId}, 積分變化=${points}`);
         res.json({ message: '积分更新成功' });
     });
 });
@@ -364,6 +374,87 @@ function getStageNumber(stageName) {
     const match = stageName.match(/level(\d+)/);
     return match ? match[1] : '1';
 }
+
+// ============ 自定義行為管理 API ============
+
+// ============ 自定義階段和行為管理 API ============
+
+// 獲取自定義階段配置
+apiRouter.get('/stages/custom', (req, res) => {
+    database.getCustomStages((err, stages) => {
+        if (err) {
+            return res.status(500).json({ error: '獲取階段配置失敗' });
+        }
+        
+        // 轉換為前端期望的格式
+        const result = stages.map(stage => ({
+            name: stage.name,
+            min: stage.min_points,
+            max: stage.max_points,
+            description: stage.description,
+            image: stage.image
+        }));
+        
+        res.json(result);
+    });
+});
+
+// 保存自定義階段配置
+apiRouter.post('/stages/custom', requireTeacherAuth, (req, res) => {
+    const { stages } = req.body;
+    
+    if (!Array.isArray(stages)) {
+        return res.status(400).json({ error: '無效的階段配置資料' });
+    }
+    
+    console.log(`💾 保存自定義階段配置:`, stages);
+    
+    database.saveCustomStages(stages, (err) => {
+        if (err) {
+            console.error('❌ 保存階段配置失敗:', err);
+            return res.status(500).json({ error: '保存階段配置失敗' });
+        }
+        console.log('✅ 階段配置保存成功');
+        res.json({ message: '階段配置保存成功' });
+    });
+});
+
+// 獲取自定義行為配置
+apiRouter.get('/behaviors', (req, res) => {
+    database.getCustomBehaviors((err, behaviors) => {
+        if (err) {
+            return res.status(500).json({ error: '獲取行為配置失敗' });
+        }
+        
+        // 將資料庫格式轉換為前端期望的格式
+        const result = {
+            positive: behaviors.filter(b => b.behavior_type === 'positive'),
+            negative: behaviors.filter(b => b.behavior_type === 'negative')
+        };
+        
+        res.json(result);
+    });
+});
+
+// 保存自定義行為配置
+apiRouter.post('/behaviors', requireTeacherAuth, (req, res) => {
+    const { behaviors } = req.body;
+    
+    if (!behaviors || typeof behaviors !== 'object') {
+        return res.status(400).json({ error: '無效的行為配置資料' });
+    }
+    
+    console.log(`💾 保存自定義行為配置:`, behaviors);
+    
+    database.saveCustomBehaviors(behaviors, (err) => {
+        if (err) {
+            console.error('❌ 保存行為配置失敗:', err);
+            return res.status(500).json({ error: '保存行為配置失敗' });
+        }
+        console.log('✅ 行為配置保存成功');
+        res.json({ message: '行為配置保存成功' });
+    });
+});
 
 // ============ 備份 API 端點 ============
 const backup = require('./backup');

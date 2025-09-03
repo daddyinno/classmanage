@@ -52,11 +52,27 @@ const API_BASE = (() => {
 })();
 
 // 頁面載入完成後執行
-document.addEventListener('DOMContentLoaded', function() {
-    loadCustomBehaviors();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadCustomBehaviors();
+    await loadCustomStages();
     loadStudents();
     loadLogs();
     renderBehaviorOptions();
+    
+    // 設置自動刷新機制 - 每5秒刷新一次資料
+    setInterval(async () => {
+        if (!isSelectionMode && !isEditMode) {
+            loadStudents();
+            loadLogs();
+            // 也刷新行為配置以同步跨瀏覽器的自定義行為和階段
+            await loadCustomBehaviors();
+            await loadCustomStages();
+            renderBehaviorOptions();
+            console.log('🔄 自動刷新資料:', new Date().toLocaleTimeString());
+        }
+    }, 5000);
+    
+    console.log('✅ 自動刷新機制已啟動（每5秒刷新）');
     
     // 初始化為學生模式（隱藏所有編輯功能）
     hideAllEditFeatures();
@@ -273,6 +289,8 @@ async function addStudent() {
 
 // 带动画效果的积分调整
 async function adjustPointsWithAnimation(studentId, points, reason) {
+    console.log(`🎯 adjustPointsWithAnimation 被調用: 學生ID=${studentId}, 積分變化=${points}, 理由="${reason}", 老師模式=${isTeacherMode}`);
+    
     // 安全檢查：學生模式下禁止任何數據修改
     if (!isTeacherMode) {
         console.warn('安全提示：學生模式下無法修改數據');
@@ -282,6 +300,8 @@ async function adjustPointsWithAnimation(studentId, points, reason) {
     
     const student = students.find(s => s.id === studentId);
     const oldStage = student ? student.stage : 'egg';
+    
+    console.log(`📡 發送API請求到: ${API_BASE}/students/${studentId}/points`);
     
     try {
         const response = await fetch(`${API_BASE}/students/${studentId}/points`, {
@@ -296,7 +316,10 @@ async function adjustPointsWithAnimation(studentId, points, reason) {
             })
         });
         
+        console.log(`📨 API 回應狀態: ${response.status}, OK: ${response.ok}`);
+        
         const data = await response.json();
+        console.log(`📋 API 回應資料:`, data);
         
         if (response.ok) {
 
@@ -552,18 +575,64 @@ async function deleteStudent(studentId) {
 }
 
 // 載入自定義行為
-function loadCustomBehaviors() {
-    const saved = localStorage.getItem('customBehaviors');
-    if (saved) {
-        customBehaviors = JSON.parse(saved);
-    } else {
+async function loadCustomBehaviors() {
+    try {
+        const response = await fetch(`${API_BASE}/behaviors`);
+        if (response.ok) {
+            const data = await response.json();
+            // 如果有自定義行為資料，使用它
+            if (data.positive && data.positive.length > 0 || data.negative && data.negative.length > 0) {
+                customBehaviors = data;
+                console.log('✅ 從資料庫載入自定義行為配置:', customBehaviors);
+            } else {
+                customBehaviors = null;
+                console.log('📋 資料庫中無自定義行為，使用預設配置');
+            }
+        } else {
+            console.log('⚠️ 無法載入自定義行為，使用預設配置');
+            customBehaviors = null;
+        }
+    } catch (error) {
+        console.error('載入自定義行為失敗:', error);
         customBehaviors = null;
     }
 }
 
 // 保存自定義行為
-function saveCustomBehaviors() {
-    localStorage.setItem('customBehaviors', JSON.stringify(customBehaviors));
+async function saveCustomBehaviors() {
+    if (!isTeacherMode) {
+        showError('需要老師權限才能保存行為配置');
+        return;
+    }
+    
+    try {
+        console.log('💾 保存自定義行為到資料庫:', customBehaviors);
+        
+        const response = await fetch(`${API_BASE}/behaviors`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
+            },
+            body: JSON.stringify({ 
+                behaviors: customBehaviors 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ 行為配置保存成功');
+            // 移除localStorage中的舊資料
+            localStorage.removeItem('customBehaviors');
+        } else {
+            console.error('❌ 保存行為配置失敗:', data);
+            showError(data.error || '保存行為配置失敗');
+        }
+    } catch (error) {
+        console.error('保存行為配置網路錯誤:', error);
+        showError('網路錯誤: ' + error.message);
+    }
 }
 
 // 獲取當前行為選項（自定義或預設）
@@ -2421,33 +2490,68 @@ function initializeRanking() {
 // ===================
 
 // 載入自定義階段配置
-function loadCustomStages() {
-    const saved = localStorage.getItem('customStages');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // 檢查自定義階段是否有效且包含image屬性
-            if (parsed && Array.isArray(parsed) && parsed.length > 0 && parsed.every(stage => stage.image)) {
-                customStages = parsed;
-                console.log('載入自定義階段配置:', customStages);
+async function loadCustomStages() {
+    try {
+        const response = await fetch(`${API_BASE}/stages/custom`);
+        if (response.ok) {
+            const data = await response.json();
+            // 如果有自定義階段資料且有效，使用它
+            if (data && Array.isArray(data) && data.length > 0 && data.every(stage => stage.image)) {
+                customStages = data;
+                console.log('✅ 從資料庫載入自定義階段配置:', customStages);
             } else {
-                console.log('自定義階段配置無效，使用默認配置');
                 customStages = null;
-                localStorage.removeItem('customStages'); // 清除無效配置
+                console.log('📋 資料庫中無自定義階段，使用預設配置');
             }
-        } catch (error) {
-            console.error('載入自定義階段失敗:', error);
+        } else {
+            console.log('⚠️ 無法載入自定義階段，使用預設配置');
             customStages = null;
-            localStorage.removeItem('customStages'); // 清除無效配置
         }
+    } catch (error) {
+        console.error('載入自定義階段失敗:', error);
+        customStages = null;
     }
 }
 
 // 保存自定義階段配置
-function saveCustomStages() {
-    if (customStages) {
-        localStorage.setItem('customStages', JSON.stringify(customStages));
-        console.log('自定義階段已保存');
+async function saveCustomStages() {
+    if (!isTeacherMode) {
+        showError('需要老師權限才能保存階段配置');
+        return;
+    }
+    
+    if (!customStages) {
+        console.log('⚠️ 無階段配置需要保存');
+        return;
+    }
+    
+    try {
+        console.log('💾 保存自定義階段到資料庫:', customStages);
+        
+        const response = await fetch(`${API_BASE}/stages/custom`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Teacher-Mode': isTeacherMode ? 'true' : 'false'
+            },
+            body: JSON.stringify({ 
+                stages: customStages 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            console.log('✅ 階段配置保存成功');
+            // 移除localStorage中的舊資料
+            localStorage.removeItem('customStages');
+        } else {
+            console.error('❌ 保存階段配置失敗:', data);
+            showError(data.error || '保存階段配置失敗');
+        }
+    } catch (error) {
+        console.error('保存階段配置網路錯誤:', error);
+        showError('網路錯誤: ' + error.message);
     }
 }
 

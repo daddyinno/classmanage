@@ -101,7 +101,32 @@ function initializeDatabase() {
             (10, 'level10', 180, 999999, '第10級 - 完美境界')
         `);
 
-        // 系統配置表
+        // 自定義階段配置表
+        db.run(`CREATE TABLE IF NOT EXISTS custom_stages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stage_key TEXT NOT NULL,
+            name TEXT NOT NULL,
+            min_points INTEGER NOT NULL,
+            max_points INTEGER NOT NULL,
+            description TEXT,
+            image TEXT NOT NULL,
+            display_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        // 自定義行為配置表
+        db.run(`CREATE TABLE IF NOT EXISTS custom_behaviors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            behavior_type TEXT NOT NULL CHECK (behavior_type IN ('positive', 'negative')),
+            icon TEXT NOT NULL,
+            name TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            description TEXT,
+            display_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
         db.run(`CREATE TABLE IF NOT EXISTS system_config (
             id INTEGER PRIMARY KEY,
             config_key TEXT UNIQUE NOT NULL,
@@ -511,6 +536,150 @@ function resetAllStudentsData(callback) {
     });
 }
 
+// ============ 自定義階段管理 ============
+
+// 獲取所有自定義階段
+function getCustomStages(callback) {
+    db.all(
+        "SELECT * FROM custom_stages ORDER BY display_order, min_points",
+        callback
+    );
+}
+
+// 保存自定義階段（完全替換）
+function saveCustomStages(stagesData, callback) {
+    if (!Array.isArray(stagesData)) {
+        return callback(new Error('階段資料必須是陣列'));
+    }
+    
+    db.serialize(() => {
+        // 開始事務
+        db.run("BEGIN TRANSACTION", (err) => {
+            if (err) return callback(err);
+            
+            // 清空現有階段
+            db.run("DELETE FROM custom_stages", (err) => {
+                if (err) {
+                    db.run("ROLLBACK");
+                    return callback(err);
+                }
+                
+                if (stagesData.length === 0) {
+                    // 沒有階段要插入，直接提交
+                    db.run("COMMIT", callback);
+                    return;
+                }
+                
+                let completed = 0;
+                const total = stagesData.length;
+                
+                // 插入階段
+                stagesData.forEach((stage, index) => {
+                    db.run(
+                        "INSERT INTO custom_stages (stage_key, name, min_points, max_points, description, image, display_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [stage.name, stage.name, stage.min, stage.max, stage.description || '', stage.image, index],
+                        function(err) {
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return callback(err);
+                            }
+                            
+                            completed++;
+                            if (completed === total) {
+                                db.run("COMMIT", callback);
+                            }
+                        }
+                    );
+                });
+            });
+        });
+    });
+}
+
+// ============ 自定義行為管理 ============
+
+// 獲取所有自定義行為
+function getCustomBehaviors(callback) {
+    db.all(
+        "SELECT * FROM custom_behaviors ORDER BY behavior_type, display_order, created_at",
+        callback
+    );
+}
+
+// 保存自定義行為（完全替換）
+function saveCustomBehaviors(behaviorsData, callback) {
+    db.serialize(() => {
+        // 開始事務
+        db.run("BEGIN TRANSACTION", (err) => {
+            if (err) return callback(err);
+            
+            // 清空現有行為
+            db.run("DELETE FROM custom_behaviors", (err) => {
+                if (err) {
+                    db.run("ROLLBACK");
+                    return callback(err);
+                }
+                
+                // 插入新行為
+                let completed = 0;
+                let totalInserts = 0;
+                
+                // 計算總插入數量
+                if (behaviorsData.positive) totalInserts += behaviorsData.positive.length;
+                if (behaviorsData.negative) totalInserts += behaviorsData.negative.length;
+                
+                if (totalInserts === 0) {
+                    // 沒有行為要插入，直接提交
+                    db.run("COMMIT", callback);
+                    return;
+                }
+                
+                // 插入正面行為
+                if (behaviorsData.positive) {
+                    behaviorsData.positive.forEach((behavior, index) => {
+                        db.run(
+                            "INSERT INTO custom_behaviors (behavior_type, icon, name, points, description, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+                            ['positive', behavior.icon, behavior.name, behavior.points, behavior.description || '', index],
+                            function(err) {
+                                if (err) {
+                                    db.run("ROLLBACK");
+                                    return callback(err);
+                                }
+                                
+                                completed++;
+                                if (completed === totalInserts) {
+                                    db.run("COMMIT", callback);
+                                }
+                            }
+                        );
+                    });
+                }
+                
+                // 插入負面行為
+                if (behaviorsData.negative) {
+                    behaviorsData.negative.forEach((behavior, index) => {
+                        db.run(
+                            "INSERT INTO custom_behaviors (behavior_type, icon, name, points, description, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+                            ['negative', behavior.icon, behavior.name, behavior.points, behavior.description || '', index],
+                            function(err) {
+                                if (err) {
+                                    db.run("ROLLBACK");
+                                    return callback(err);
+                                }
+                                
+                                completed++;
+                                if (completed === totalInserts) {
+                                    db.run("COMMIT", callback);
+                                }
+                            }
+                        );
+                    });
+                }
+            });
+        });
+    });
+}
+
 module.exports = {
     db,
     initializeDatabase,
@@ -531,5 +700,9 @@ module.exports = {
     getHungryStudents,
     processHungerDowngrade,
     processAllHungryStudents,
-    resetAllStudentsData
+    resetAllStudentsData,
+    getCustomStages,
+    saveCustomStages,
+    getCustomBehaviors,
+    saveCustomBehaviors
 };
