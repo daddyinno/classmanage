@@ -3199,8 +3199,8 @@ function showAllEditFeatures() {
     // 恢復行為項目的點擊功能（老師模式可以操作）
     enableBehaviorInteraction();
     
-    // 添加老師模式提示
-    addTeacherModeNotice();
+    // 添加老師模式提示 (已停用)
+    // addTeacherModeNotice();
 }
 
 // 隱藏所有編輯功能
@@ -3392,24 +3392,10 @@ function removeStudentViewNotice() {
     }
 }
 
-// 添加老師模式提示
+// 添加老師模式提示 (已停用)
 function addTeacherModeNotice() {
-    // 避免重複添加
-    if (document.querySelector('.teacher-mode-notice')) return;
-    
-    const behaviorsSection = document.querySelector('.behaviors-section');
-    if (behaviorsSection) {
-        const notice = document.createElement('div');
-        notice.className = 'teacher-mode-notice';
-        notice.innerHTML = `
-            <div class="notice-content">
-                <span class="notice-icon">👨‍🏫</span>
-                <span class="notice-text">老師管理模式 - 完整操作權限</span>
-                <span class="notice-subtitle">可以進行所有評分和管理操作</span>
-            </div>
-        `;
-        behaviorsSection.insertBefore(notice, behaviorsSection.firstChild);
-    }
+    // 功能已停用 - 不再顯示老師模式提示
+    return;
 }
 
 // 移除老師模式提示
